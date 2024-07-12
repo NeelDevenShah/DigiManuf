@@ -43,12 +43,12 @@ def send_telemetry(sensor_id):
         # Send the message to IoT Hub
         message = Message(json.dumps(message_payload))
         iot_client.send_message(message)
-        print(f"Sent message to IoT Hub")
+        print("Sent message to IoT Hub")
         
         # Save the message to Azure Blob Storage
         blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=f"{sensor_id}/{time.time()}.json")
         blob_client.upload_blob(json.dumps(message_payload), overwrite=True)
-        print(f"Saved message to Blob Storage")
+        print("Saved message to Blob Storage")
         
         # Wait for 5 seconds before sending the next message
         time.sleep(5)
