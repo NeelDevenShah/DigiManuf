@@ -16,9 +16,9 @@ credential = DefaultAzureCredential()
 secret_client = SecretClient(vault_url=key_vault_url, credential=credential)
 
 # Replace with your IoT Hub device connection string
-CONNECTION_STRING = secret_client.get_secret("iot-device-1")
-STORAGE_CONNECTION_STRING = secret_client.get_secret("blob-storage-string")
-CONTAINER_NAME = secret_client.get_secret("blob-container-name")
+CONNECTION_STRING = str(secret_client.get_secret("iot-device-1"))
+STORAGE_CONNECTION_STRING = str(secret_client.get_secret("blob-storage-string"))
+CONTAINER_NAME = str(secret_client.get_secret("blob-container-name"))
 
 # Create an IoT Hub client
 iot_client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
@@ -46,9 +46,9 @@ def send_telemetry(sensor_id):
         print(f"Sent message to IoT Hub: {message_payload}")
         
         # Save the message to Azure Blob Storage
-        #blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=f"{sensor_id}/{time.time()}.json")
-        #blob_client.upload_blob(json.dumps(message_payload), overwrite=True)
-        #print(f"Saved message to Blob Storage: {message_payload}")
+        blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=f"{sensor_id}/{time.time()}.json")
+        blob_client.upload_blob(json.dumps(message_payload), overwrite=True)
+        print(f"Saved message to Blob Storage: {message_payload}")
         
         # Wait for 5 seconds before sending the next message
         time.sleep(5)
@@ -56,4 +56,3 @@ def send_telemetry(sensor_id):
 if __name__ == "__main__":
     sensor = 'dummySensor1'
     send_telemetry(sensor)
-    print(sensor)
