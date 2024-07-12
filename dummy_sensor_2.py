@@ -16,9 +16,9 @@ credential = DefaultAzureCredential()
 secret_client = SecretClient(vault_url=key_vault_url, credential=credential)
 
 # Replace with your IoT Hub device connection string
-CONNECTION_STRING = str(secret_client.get_secret("iot-device-1"))
-STORAGE_CONNECTION_STRING = str(secret_client.get_secret("blob-storage-string"))
-CONTAINER_NAME = str(secret_client.get_secret("blob-container-name"))
+CONNECTION_STRING = str(secret_client.get_secret("iot-device-1").value)
+STORAGE_CONNECTION_STRING = str(secret_client.get_secret("blob-storage-string").value)
+CONTAINER_NAME = str(secret_client.get_secret("blob-container-name").value)
 
 # Create an IoT Hub client
 iot_client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
