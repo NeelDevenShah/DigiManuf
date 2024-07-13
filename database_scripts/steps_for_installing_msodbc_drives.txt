@@ -1,0 +1,28 @@
+Steps for installing msodbc drives
+
+Install the Microsoft ODBC driver for SQL Server on your Linux system. Since you're using Pop!_OS, which is based on Ubuntu, you can follow these steps:
+a. Import the Microsoft GPG key:
+`curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -`
+b. Add the Microsoft repository:
+`curl https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list | sudo tee /etc/apt/sources.list.d/mssql-release.list`
+
+c. Update the package list:
+`apt-get update`
+
+d. Install the ODBC driver:
+`sudo ACCEPT_EULA=Y apt-get install -y msodbcsql17`
+Note: This installs version 17. If you want version 18 (as mentioned in your previous error), replace msodbcsql17 with msodbcsql18.
+You might also need to install the following packages:
+
+`apt-get install -y unixodbc-dev`
+
+e. Make the change in the networking of the azure sql, and allow the public network acces, and then add the new firewall rule and in that add the ip addresss, for getting the ipv4 use `curl -4 ifconfig.me`.
+
+After installation, modify your Python script to use the correct driver name:
+pythonCopydriver = '{ODBC Driver 17 for SQL Server}'
+Or if you installed version 18:
+pythonCopydriver = '{ODBC Driver 18 for SQL Server}'
+
+Run your Python script again.
+
+# Extra: Make sure while making the azure sql server choose the option denoting both the authentication method(User/Password base and EntraId based)
