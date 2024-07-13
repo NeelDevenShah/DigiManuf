@@ -1,0 +1,18 @@
+{
+    "@id": "dtmi:assetGen:SaltMachine;1",
+    "@type": "Interface",
+    "@context": "dtmi:dtdl:context;2",
+    "displayName": "SaltMachine",
+    "contents": [
+     {
+      "@type": "Property",
+      "name": "InFlow",
+      "schema": "double"
+     },
+     {
+      "@type": "Property",
+      "name": "OutFlow",
+      "schema": "double"
+     }
+    ]
+   }

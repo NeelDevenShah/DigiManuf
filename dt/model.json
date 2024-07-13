@@ -1,0 +1,18 @@
+{
+    "@id": "dtmi:ddneeltest:sensor;1",
+    "@type": "Interface",
+    "@context": "dtmi:dtdl:context;2",
+    "displayName": "Sensor1",
+    "contents": [
+     {
+      "@type": "Property",
+      "name": "temperature",
+      "schema": "double"
+     },
+     {
+      "@type": "Property",
+      "name": "humidity",
+      "schema": "double"
+     }
+    ]
+   }

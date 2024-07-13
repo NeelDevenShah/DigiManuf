@@ -1,0 +1,31 @@
+{
+    "@id": "dtmi:assetGen:Factory;1",
+    "@type": "Interface",
+    "@context": "dtmi:dtdl:context;2",
+    "displayName": "Factory",
+    "contents": [
+     {
+      "@type": "Relationship",
+      "name": "contains",
+      "properties": [
+       {
+        "@type": "Property",
+        "name": "targetModel",
+        "schema": "string"
+       }
+      ]
+     },
+     {
+      "@type": "Relationship",
+      "name": "employs",
+      "properties": [
+       {
+        "@type": "Property",
+        "name": "targetModel",
+        "schema": "string"
+       }
+      ],
+      "target": "dtmi:assetGen:MaintenancePersonnel;1"
+     }
+    ]
+   }
