@@ -7,7 +7,7 @@ from azure.keyvault.secrets import SecretClient
 import json
 
 # Define the Key Vault URL
-key_vault_url = "https://key-valut-digitaltwin.vault.azure.net/"
+key_vault_url = "https://dtwin-keyvault.vault.azure.net/"
 
 # Authenticate using DefaultAzureCredential
 credential = DefaultAzureCredential()
@@ -17,14 +17,14 @@ secret_client = SecretClient(vault_url=key_vault_url, credential=credential)
 
 # Replace with your IoT Hub device connection string
 CONNECTION_STRING = str(secret_client.get_secret("iot-device-1").value)
-STORAGE_CONNECTION_STRING = str(secret_client.get_secret("blob-storage-string").value)
-CONTAINER_NAME = str(secret_client.get_secret("blob-container-name").value)
+# STORAGE_CONNECTION_STRING = str(secret_client.get_secret("blob-storage-string").value)
+# CONTAINER_NAME = str(secret_client.get_secret("blob-container-name").value)
 
 # Create an IoT Hub client
 iot_client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
 
 # Create a BlobServiceClient
-blob_service_client = BlobServiceClient.from_connection_string(STORAGE_CONNECTION_STRING)
+# blob_service_client = BlobServiceClient.from_connection_string(STORAGE_CONNECTION_STRING)
 
 def send_telemetry(sensor_id):
     while True:
@@ -46,9 +46,9 @@ def send_telemetry(sensor_id):
         print("Sent message to IoT Hub")
         
         # Save the message to Azure Blob Storage
-        blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=f"{sensor_id}/{time.time()}.json")
-        blob_client.upload_blob(json.dumps(message_payload), overwrite=True)
-        print("Saved message to Blob Storage")
+        # blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=f"{sensor_id}/{time.time()}.json")
+        # blob_client.upload_blob(json.dumps(message_payload), overwrite=True)
+        # print("Saved message to Blob Storage")
         
         # Wait for 5 seconds before sending the next message
         time.sleep(5)

@@ -13,7 +13,7 @@ credential = DefaultAzureCredential()
 secret_client = SecretClient(vault_url=key_vault_url, credential=credential)
 
 # Initialize the Digital Twins client
-url = str(secret_client.get_secret(name="digital-twin-conn-url", version="23a626c281034fa0ad27f43d3fc5bd30").value)
+url = str(secret_client.get_secret(name="digital-twin-conn-url").value)
 credential = DefaultAzureCredential()
 client = DigitalTwinsClient(url, credential)
 
