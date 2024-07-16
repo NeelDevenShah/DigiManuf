@@ -3,3 +3,5 @@ azure-keyvault-secrets
 azure-storage-blob
 azure-iot-device
 azure-digitaltwins-core
+azure-eventhub
+azure-functions

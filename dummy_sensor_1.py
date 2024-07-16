@@ -1,5 +1,6 @@
 import random
 import time
+import datetime
 from azure.iot.device import IoTHubDeviceClient, Message
 from azure.storage.blob import BlobServiceClient
 from azure.identity import DefaultAzureCredential
@@ -7,7 +8,7 @@ from azure.keyvault.secrets import SecretClient
 import json
 
 # Define the Key Vault URL
-key_vault_url = "https://dtwin-keyvault.vault.azure.net/"
+key_vault_url = "https://new-vault-neel.vault.azure.net/"
 
 # Authenticate using DefaultAzureCredential
 credential = DefaultAzureCredential()
