@@ -1,6 +1,7 @@
 import random
 import time
 import datetime
+from azure.digitaltwins.core import DigitalTwinsClient
 from azure.iot.device import IoTHubDeviceClient, Message
 from azure.storage.blob import BlobServiceClient
 from azure.identity import DefaultAzureCredential
@@ -21,7 +22,23 @@ secret_client = SecretClient(vault_url=key_vault_url, credential=credential)
 CONNECTION_STRING = str(secret_client.get_secret("iot-device-3").value)
 
 # Create an IoT Hub client
-iot_client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
+# iot_client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
+
+# Initialize the Digital Twins client
+url = str(secret_client.get_secret(name="digital-twin-conn-url").value)
+credential = DefaultAzureCredential()
+client = DigitalTwinsClient(url, credential)
+
+def update_twin_property(twin_id="Sensor1", property_name="", property_value=0):
+    patch = [
+        {
+            "op": "replace",
+            "path": f"/{property_name}",
+            "value": property_value
+        }
+    ]
+    client.update_digital_twin(twin_id, patch)
+    print(f"Updated {property_name} of twin {twin_id} to {property_value}")
 
 def send_telemetry(sensor_id, connection_string, insert_data_query):
    # Create a new connection for each iteration
@@ -43,8 +60,8 @@ def send_telemetry(sensor_id, connection_string, insert_data_query):
             }
             
             # Send the message to IoT Hub
-            message = Message(json.dumps(message_payload))
-            iot_client.send_message(message)
+            # message = Message(json.dumps(message_payload))
+            # iot_client.send_message(message)
             print("Sent message to IoT Hub")
 
             # Convert the datetime to a format SQL Server can understand
@@ -55,6 +72,9 @@ def send_telemetry(sensor_id, connection_string, insert_data_query):
             cursor.executemany(insert_data_query, data)
             connection.commit()
             print("Data inserted into SQL database")
+            
+            update_twin_property(property_name="temperature", property_value=message_payload["temperature"])
+            update_twin_property(property_name="humidity", property_value=message_payload["humidity"])
 
         except Exception as e:
             print(f"An error occurred: {e}")
