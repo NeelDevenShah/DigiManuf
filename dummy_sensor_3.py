@@ -1,13 +1,15 @@
 import random
 import time
+import datetime
 from azure.iot.device import IoTHubDeviceClient, Message
 from azure.storage.blob import BlobServiceClient
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 import json
+import pyodbc
 
 # Define the Key Vault URL
-key_vault_url = "https://dtwin-keyvault.vault.azure.net/"
+key_vault_url = "https://new-vault-neel.vault.azure.net/"
 
 # Authenticate using DefaultAzureCredential
 credential = DefaultAzureCredential()
@@ -16,43 +18,59 @@ credential = DefaultAzureCredential()
 secret_client = SecretClient(vault_url=key_vault_url, credential=credential)
 
 # Replace with your IoT Hub device connection string
-CONNECTION_STRING = str(secret_client.get_secret("iot-device-1").value)
-# STORAGE_CONNECTION_STRING = str(secret_client.get_secret("blob-storage-string").value)
-# CONTAINER_NAME = str(secret_client.get_secret("blob-container-name").value)
+CONNECTION_STRING = str(secret_client.get_secret("iot-device-3").value)
 
 # Create an IoT Hub client
 iot_client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
 
-# Create a BlobServiceClient
-# blob_service_client = BlobServiceClient.from_connection_string(STORAGE_CONNECTION_STRING)
-
-def send_telemetry(sensor_id):
+def send_telemetry(sensor_id, connection_string, insert_data_query):
+   # Create a new connection for each iteration
+    connection = pyodbc.connect(connection_string)
+    cursor = connection.cursor()
     while True:
-        # Generate random telemetry data
-        temperature = random.uniform(20.0, 30.0)
-        humidity = random.uniform(30.0, 70.0)
+        try:
+            # Generate random telemetry data
+            temperature = random.uniform(20.0, 30.0)
+            humidity = random.uniform(30.0, 70.0)
+            
+            # Create the message payload
+            current_time = datetime.datetime.utcnow()
+            message_payload = {
+                "deviceId": sensor_id,
+                "temperature": temperature,
+                "humidity": humidity,
+                "timestamp": current_time.isoformat()  # Use ISO format for IoT Hub message
+            }
+            
+            # Send the message to IoT Hub
+            message = Message(json.dumps(message_payload))
+            iot_client.send_message(message)
+            print("Sent message to IoT Hub")
+
+            # Convert the datetime to a format SQL Server can understand
+            sql_timestamp = current_time.strftime("%Y-%m-%d %H:%M:%S")
+
+            data = [(message_payload["deviceId"], message_payload["temperature"], message_payload["humidity"], sql_timestamp)]
+
+            cursor.executemany(insert_data_query, data)
+            connection.commit()
+            print("Data inserted into SQL database")
+
+        except Exception as e:
+            print(f"An error occurred: {e}")
         
-        # Create the message payload
-        message_payload = {
-            "deviceId": sensor_id,
-            "temperature": temperature,
-            "humidity": humidity,
-            "timestamp": time.time()
-        }
-        
-        # Send the message to IoT Hub
-        message = Message(json.dumps(message_payload))
-        iot_client.send_message(message)
-        print("Sent message to IoT Hub")
-        
-        # Save the message to Azure Blob Storage
-        # blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=f"{sensor_id}/{time.time()}.json")
-        # blob_client.upload_blob(json.dumps(message_payload), overwrite=True)
-        # print("Saved message to Blob Storage")
-        
-        # Wait for 5 seconds before sending the next message
-        time.sleep(5)
+        # Wait for 2 seconds before sending the next message
+        time.sleep(4)
 
 if __name__ == "__main__":
     sensor = 'dummySensor3'
-    send_telemetry(sensor)
+    # Insert data into the table
+    insert_data_query = """
+    INSERT INTO SensorData (deviceId, temperature, humidity, timestamp)
+    VALUES (?, ?, ?, ?)
+    """
+
+    # Connection string
+    connection_string = str(secret_client.get_secret("azure-sql-connection-url").value)
+
+    send_telemetry(sensor, connection_string, insert_data_query)
