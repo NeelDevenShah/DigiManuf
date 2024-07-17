@@ -71,8 +71,8 @@ def send_telemetry(sensor_id):
             print(f"An error occurred: {e}")
         
         # Wait for 2 seconds before sending the next message
-        time.sleep(1)
+        time.sleep(4)
 
 if __name__ == "__main__":
-    sensor = 'dummySensor1'
+    sensor = 'Sensor1'
     send_telemetry(sensor)
