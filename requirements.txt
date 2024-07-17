@@ -5,3 +5,4 @@ azure-iot-device
 azure-digitaltwins-core
 azure-eventhub
 azure-functions
+azure-eventhub-checkpointstoreblob-aio
