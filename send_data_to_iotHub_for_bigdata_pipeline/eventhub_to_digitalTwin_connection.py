@@ -32,7 +32,6 @@ credential = DefaultAzureCredential()
 dt_client = DigitalTwinsClient(url, credential)
 
 def update_twin_property(twin_id, property_name, property_value):
-    print(property_value)
     patch = [
         {
             "op": "replace",
@@ -52,20 +51,8 @@ async def on_event(partition_context, event):
     
     # Parse the event body as JSON
     event_data = json.loads(event.body_as_str())
-    
-    # The actual telemetry data is in the 'body' field, which is Base64 encoded
     encoded_body = event_data[0]['data']['body']
-    
-    # Decode the Base64 body
     decoded_body = base64.b64decode(encoded_body).decode('utf-8')
-    
-    # Parse the decoded body as JSON
-    telemetry_data = json.loads(decoded_body)
-    
-   # Decode the Base64 body
-    decoded_body = base64.b64decode(encoded_body).decode('utf-8')
-    
-    # Parse the decoded body as JSON
     telemetry_data = json.loads(decoded_body)
     
     print("Decoded telemetry data:")
@@ -74,11 +61,10 @@ async def on_event(partition_context, event):
     print("-" * 50)  # Print a separator line for clarity
 
     print("Starting the process to update data to digital twin")
-    print(telemetry_data["deviceId"])
     update_twin_property(twin_id=telemetry_data["deviceId"], property_name="temperature", property_value=telemetry_data["temperature"])
     update_twin_property(twin_id=telemetry_data["deviceId"], property_name="humidity", property_value=telemetry_data["humidity"])
     
-    print("process to update data to digital twin completed")
+    print("Process to update data to digital twin completed")
 
     # Update the checkpoint
     await partition_context.update_checkpoint(event)
