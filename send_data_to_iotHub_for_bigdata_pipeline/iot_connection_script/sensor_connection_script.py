@@ -4,8 +4,6 @@ import random
 import time
 import datetime
 from azure.iot.device import IoTHubDeviceClient, Message
-from azure.storage.blob import BlobServiceClient
-from azure.digitaltwins.core import DigitalTwinsClient
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 import json
@@ -20,29 +18,13 @@ credential = DefaultAzureCredential()
 # Create a SecretClient to interact with the Key Vault
 secret_client = SecretClient(vault_url=key_vault_url, credential=credential)
 
-# Replace with your IoT Hub device connection string
-CONNECTION_STRING = str(secret_client.get_secret("iot-device-1").value)
-
-# Create an IoT Hub client
-iot_client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
-
-# Initialize the Digital Twins client
-# url = str(secret_client.get_secret(name="digital-twin-conn-url").value)
-# credential = DefaultAzureCredential()
-# client = DigitalTwinsClient(url, credential)
-
-# def update_twin_property(twin_id="Sensor3", property_name="", property_value=0):
-#     patch = [
-#         {
-#             "op": "replace",
-#             "path": f"/{property_name}",
-#             "value": property_value
-#         }
-#     ]
-#     client.update_digital_twin(twin_id, patch)
-#     print(f"Updated {property_name} of twin {twin_id} to {property_value}")
-
 def send_telemetry(sensor_id):
+    # Replace with your IoT Hub device connection string
+    CONNECTION_STRING = str(secret_client.get_secret(f"iot-device-{sensor_id}").value)
+
+    # Create an IoT Hub client
+    iot_client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
+    
    # Create a new connection for each iteration
     while True:
         try:
@@ -63,16 +45,14 @@ def send_telemetry(sensor_id):
             message = Message(json.dumps(message_payload))
             iot_client.send_message(message)
             print("Sent message to IoT Hub")
-            
-            # update_twin_property(property_name="temperature", property_value=message_payload["temperature"])
-            # update_twin_property(property_name="humidity", property_value=message_payload["humidity"])
 
         except Exception as e:
             print(f"An error occurred: {e}")
         
-        # Wait for 2 seconds before sending the next message
+        # Wait for 4 seconds before sending the next message
         time.sleep(4)
 
 if __name__ == "__main__":
-    sensor = 'Sensor1'
-    send_telemetry(sensor)
+    # As per the name in the azure iot hub and azure digital twin
+    sensor_id = 'Sensor1'
+    send_telemetry(sensor_id)
