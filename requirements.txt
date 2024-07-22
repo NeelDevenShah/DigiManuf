@@ -6,3 +6,5 @@ azure-digitaltwins-core
 azure-eventhub
 azure-functions
 azure-eventhub-checkpointstoreblob-aio
+
+# TODO: Make an API for the following service and deploy it on azure apps, also if possible, make the whole process of scaling up and down automatic

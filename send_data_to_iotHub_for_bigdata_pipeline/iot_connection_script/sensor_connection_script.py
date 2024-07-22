@@ -8,6 +8,7 @@ from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 import json
 import pyodbc
+import argparse
 
 # Define the Key Vault URL
 key_vault_url = "https://newvaultneel.vault.azure.net/"
@@ -54,5 +55,7 @@ def send_telemetry(sensor_id):
 
 if __name__ == "__main__":
     # As per the name in the azure iot hub and azure digital twin
-    sensor_id = 'Sensor1'
-    send_telemetry(sensor_id)
+    parser = argparse.ArgumentParser("Send telemetry data to IoT Hub")
+    parser.add_argument('--sensor-id', type=str, help="ID of the sensor")
+    args = parser.parse_args()
+    send_telemetry(args.sensor_id)
