@@ -1,0 +1,1 @@
+Directory contains the some sample .glb files which are the meshes that can be used for making the digital twin
