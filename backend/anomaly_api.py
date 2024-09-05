@@ -22,7 +22,7 @@ CONTAINER_NAME = ""
 
 BLOB_CONNECTION_STRING = ""
 BLOB_CONTAINER_NAME = ""
-BLOB_MODEL_NAME = "model.pkl"
+BLOB_MODEL_NAME = "model_anomaly.pkl"
 
 # Function to fetch data from Cosmos DB
 def fetch_data_from_cosmos():
@@ -57,7 +57,7 @@ def train_model(df):
 
 # Function to save the model to Azure Blob Storage
 def save_model_to_blob(model, scaler, is_backup=False):
-    filename = BLOB_MODEL_NAME if not is_backup else f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}_model.pkl"
+    filename = BLOB_MODEL_NAME if not is_backup else f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}_model_anomaly.pkl"
     
     # Save model and scaler to a local file
     with open(filename, "wb") as f:
@@ -77,15 +77,15 @@ def load_model_from_blob():
     blob_client = blob_service_client.get_blob_client(container=BLOB_CONTAINER_NAME, blob=BLOB_MODEL_NAME)
     
     # Download the model file from Blob Storage
-    with open("model.pkl", "wb") as download_file:
+    with open("model_anomaly.pkl", "wb") as download_file:
         download_file.write(blob_client.download_blob().readall())
 
     # Load the model from the file
-    model, scaler = joblib.load("model.pkl")
+    model, scaler = joblib.load("model_anomaly.pkl")
     return model, scaler
 
 # API to trigger training and replace the running model
-@app.post("/train_model")
+@app.post("/train_anomaly_model")
 def train_and_store_model():
     global model, scaler
 
