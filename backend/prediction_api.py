@@ -22,18 +22,41 @@ BLOB_CONTAINER_NAME = ""
 BLOB_MODEL_NAME = "model_prediction.pkl"
 
 # Function to fetch data from Cosmos DB
-def fetch_data_from_cosmos():
+def fetch_data_from_cosmos(organization_id: str, machine_id: str, sensor_id: str):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
     database = client.get_database_client(DATABASE_NAME)
     container = database.get_container_client(CONTAINER_NAME)
 
     # Query all the data from the container
-    query = "SELECT * FROM c"
+    query = f"""SELECT * FROM c 
+    WHERE c.organization_id = '{organization_id}' 
+    AND c.machine_id = '{machine_id}' 
+    AND c.sensor_id = '{sensor_id}' """
     items = list(container.query_items(query=query, enable_cross_partition_query=True))
 
     # Convert to DataFrame
     df = pd.DataFrame(items)
+    print(f"fetched {len(df)} data from the cosmos related to the {organization_id}, {machine_id}, {sensor_id}")
     return df
+
+# API to predict future sensor values
+class PredictionInput(BaseModel):
+    periods: int  # Number of future periods to predict
+    start_timestamp: Optional[str] = None  # Optional start timestamp in ISO format
+    organization_id: str
+    machine_id: str
+    sensor_id: str
+
+class PredictionOutput(BaseModel):
+    predictions: List[float]  # List of predicted values
+    organization_id: str
+    machine_id: str
+    sensor_id: str
+
+class TrainingInput(BaseModel):
+    organization_id: str
+    machine_id: str
+    sensor_id: str
 
 # Function to train the Prophet model
 def train_model(df):
@@ -78,11 +101,13 @@ def load_model_from_blob():
 
 # API to trigger training and replace the running model
 @app.post("/train_prediction_model")
-def train_and_store_model():
+def train_and_store_model(data: TrainingInput):
     global model
+    
+    # TODO setup according to the data.organization_id, data.machine_id, data.sensor_id
 
     # Fetch data from Cosmos DB
-    df = fetch_data_from_cosmos()
+    df = fetch_data_from_cosmos(organization_id = data.organization_id, machine_id = data.machine_id, sensor_id = data.sensor_id)
 
     # Train the new model
     model = train_model(df)
@@ -92,17 +117,12 @@ def train_and_store_model():
     
     return {"message": "Model trained, updated, and saved to blob storage"}
 
-# API to predict future sensor values
-class PredictionInput(BaseModel):
-    periods: int  # Number of future periods to predict
-    start_timestamp: Optional[str] = None  # Optional start timestamp in ISO format
-
-class PredictionOutput(BaseModel):
-    predictions: List[float]  # List of predicted values
-
 @app.post("/predict_values", response_model=PredictionOutput)
 def predict_values(data: PredictionInput):
     global model
+    
+    # TODO setup according to the data.organization_id, data.machine_id, data.sensor_id
+    
     if model is None:
         return {"error": "Model not loaded. Train the model first."}
 
@@ -110,10 +130,11 @@ def predict_values(data: PredictionInput):
     if data.start_timestamp:
         start_date = pd.to_datetime(data.start_timestamp)
     else:
-        # Use the latest date from the training data if no start_timestamp is provided
-        df = fetch_data_from_cosmos()
-        df['timestamp'] = pd.to_datetime(df['datetime'])
-        start_date = df['timestamp'].max() + pd.Timedelta(hours=1)  # Start from the next hour
+        # Use the current time for the start_date
+        start_date = pd.Timestamp(datetime.now())
+
+        # Optionally, if you want to ensure that the start_date is rounded to the nearest hour, you can do:
+        start_date = start_date.ceil('H')
 
     future = model.make_future_dataframe(periods=data.periods, freq='H', include_history=False)
     future['ds'] = pd.date_range(start=start_date, periods=data.periods, freq='H')
@@ -124,10 +145,15 @@ def predict_values(data: PredictionInput):
     # Extract the predicted values (yhat)
     predictions = forecast['yhat'].tolist()
     
-    return PredictionOutput(predictions=predictions)
+    return PredictionOutput(predictions=predictions, organization_id=data.organization_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
 
 if __name__ == "__main__":
     import uvicorn
+    
+    global organization_id, machine_id, sensor_id
+    organization_id = "org_001"
+    machine_id = "mach_001"
+    sensor_id = "sens_001"
     
     # Load model on startup
     try:

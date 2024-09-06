@@ -25,17 +25,21 @@ BLOB_CONTAINER_NAME = ""
 BLOB_MODEL_NAME = "model_anomaly.pkl"
 
 # Function to fetch data from Cosmos DB
-def fetch_data_from_cosmos():
+def fetch_data_from_cosmos(organization_id: str, machine_id: str, sensor_id: str):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
     database = client.get_database_client(DATABASE_NAME)
     container = database.get_container_client(CONTAINER_NAME)
 
     # Query all the data from the container
-    query = "SELECT * FROM c"
+    query = f"""SELECT * FROM c 
+    WHERE c.organization_id = '{organization_id}' 
+    AND c.machine_id = '{machine_id}' 
+    AND c.sensor_id = '{sensor_id}' """
     items = list(container.query_items(query=query, enable_cross_partition_query=True))
 
     # Convert to DataFrame
     df = pd.DataFrame(items)
+    print(f"fetched {len(df)} data from the cosmos related to the {organization_id}, {machine_id}, {sensor_id}")
     return df
 
 # Function to train the Isolation Forest model
@@ -84,23 +88,6 @@ def load_model_from_blob():
     model, scaler = joblib.load("model_anomaly.pkl")
     return model, scaler
 
-# API to trigger training and replace the running model
-@app.post("/train_anomaly_model")
-def train_and_store_model():
-    global model, scaler
-
-    # Fetch data from Cosmos DB
-    df = fetch_data_from_cosmos()
-
-    # Train the new model
-    model, scaler = train_model(df)
-
-    # Save the new model to Blob Storage and update the running model
-    save_model_to_blob(model, scaler)
-    
-    return {"message": "Model trained, updated, and saved to blob storage"}
-
-# API to predict anomaly
 class AnomalyDetectionInput(BaseModel):
     temperature: float
     second: int
@@ -114,9 +101,42 @@ class AnomalyDetectionInput(BaseModel):
     rolling_mean_temp: float
     rolling_std_temp: float
     temp_lag_1s: float
+    organization_id: str
+    machine_id: str
+    sensor_id: str
 
 class AnomalyDetectionOutput(BaseModel):
     is_anomaly: bool
+    organization_id: str
+    machine_id: str
+    sensor_id: str
+    
+class TrainingInput(BaseModel):
+    organization_id: str
+    machine_id: str
+    sensor_id: str
+    
+# API to trigger training and replace the running model
+@app.post("/train_anomaly_model")
+def train_and_store_model(data: TrainingInput):
+    global model, scaler
+
+    # TODO setup according to the data.organization_id, data.machine_id, data.sensor_id
+
+    # Fetch data from Cosmos DB
+    df = fetch_data_from_cosmos(organization_id=data.organization_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
+
+    # Train the new model
+    model, scaler = train_model(df)
+
+    # Save the new model to Blob Storage and update the running model
+    save_model_to_blob(model, scaler)
+    
+    return {"message": "Model trained, updated, and saved to blob storage"}
+
+# API to predict anomaly
+# Add the dictionary thing, for selcting model, or check for any other option possible
+# 2. An another option is to download and train, on demand instead of the having one on initial time
 
 @app.post("/predict_anomaly", response_model=AnomalyDetectionOutput)
 def predict_anomaly(data: AnomalyDetectionInput):
@@ -124,6 +144,8 @@ def predict_anomaly(data: AnomalyDetectionInput):
     if model is None or scaler is None:
         return {"error": "Model not loaded. Train the model first."}
 
+    # TODO setup according to the data.organization_id, data.machine_id, data.sensor_id
+    
     # Convert input data to numpy array
     instance = np.array([
         data.temperature, 
@@ -145,10 +167,15 @@ def predict_anomaly(data: AnomalyDetectionInput):
     # Predict using Isolation Forest
     prediction = model.predict(instance_scaled)
     
-    return AnomalyDetectionOutput(is_anomaly=(prediction[0] == -1))
+    return AnomalyDetectionOutput(is_anomaly=(prediction[0] == -1), organization_id=data.organization_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
 
 if __name__ == "__main__":
     import uvicorn
+    
+    global organization_id, machine_id, sensor_id, model, scaler
+    organization_id = "org_001"
+    machine_id = "mach_001"
+    sensor_id = "sens_001"
     
     try:
         model, scaler = load_model_from_blob()
