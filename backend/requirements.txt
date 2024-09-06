@@ -4,5 +4,10 @@ azure-storage-blob
 azure-iot-device
 azure-digitaltwins-core
 azure-eventhub
+azure-cosmos
 azure-functions
 azure-eventhub-checkpointstoreblob-aio
+pandas
+numpy
+fastapi
+scikit-learn

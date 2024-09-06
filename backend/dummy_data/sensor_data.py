@@ -2,6 +2,7 @@ from azure.cosmos import CosmosClient, PartitionKey
 import pandas as pd
 import numpy as np
 import os
+from datetime import datetime
 
 # Azure Cosmos DB configuration
 COSMOS_DB_ENDPOINT = ""
@@ -9,11 +10,10 @@ COSMOS_DB_KEY = ""
 DATABASE_NAME = ""
 CONTAINER_NAME = ""
 
-# Function to generate dummy data with precise datetime features
-def generate_dummy_data_with_datetime(num_samples=1000):
+def generate_dummy_data_with_datetime(num_samples=1000, organization_id="001", machine_id="001", sensor_id="002"):
     # Generate a range of datetime values, for example over a period of a day
     start_datetime = pd.to_datetime("2024-01-01 00:00:00")
-    datetime_values = pd.date_range(start=start_datetime, periods=num_samples, freq='S')
+    datetime_values = pd.date_range(start=start_datetime, periods=num_samples, freq='s')
     
     # Random temperature values
     temperature = np.random.normal(loc=20, scale=5, size=num_samples)
@@ -29,7 +29,10 @@ def generate_dummy_data_with_datetime(num_samples=1000):
         'month': datetime_values.month,
         'year': datetime_values.year,
         'day_of_week': datetime_values.dayofweek,  # Monday=0, Sunday=6
-        'is_weekend': datetime_values.dayofweek >= 5  # True if Saturday or Sunday
+        'is_weekend': datetime_values.dayofweek >= 5,  # True if Saturday or Sunday
+        'organization_id': organization_id,
+        'machine_id': machine_id,
+        'sensor_id': sensor_id
     })
 
     # Rolling mean and standard deviation (simulated for demonstration)
@@ -56,13 +59,21 @@ def upload_data_to_cosmos(df):
     # Upload each row in the DataFrame to Cosmos DB
     for i, row in df.iterrows():
         item = row.to_dict()
-        item['id'] = str(i)  # Adding an 'id' field as required by Cosmos DB
+        
+        datetime_format = '%Y-%m-%d %H:%M:%S'  # Adjust this format according to your actual datetime string format
+        datetime_obj = datetime.strptime(item['datetime'], datetime_format)
+        
+         # Format datetime object to desired string format
+        formatted_datetime = datetime_obj.strftime('%Y_%m_%dT%H_%M_%S')
+
+        # Create the id using formatted datetime
+        item['id'] = f"org{item['organization_id']}_mach{item['machine_id']}_sens{item['sensor_id']}_date{formatted_datetime}"
         container.upsert_item(item)
 
     print(f"Data uploaded to Azure Cosmos DB container '{CONTAINER_NAME}'.")
 
 # Generate the dummy data
-dummy_data = generate_dummy_data_with_datetime(num_samples=10)
+dummy_data = generate_dummy_data_with_datetime(num_samples=100, organization_id="001", machine_id="001", sensor_id="001")
 
 # Save the dummy data to a CSV file if needed
 dummy_data.to_csv('dummy_data.csv', index=False)
