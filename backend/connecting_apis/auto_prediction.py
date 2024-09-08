@@ -8,8 +8,19 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException
 # FastAPI app
 app = FastAPI()
 
-# TODO: Connect DB and debug
-# Schema of the sql database for output storage
+# TODO: Connect DB(sql new one or cosmos or mongo) and debug
+
+# TODO: Schema of the sql database for output storage
+# CREATE TABLE sensor_predictions (
+#     id INT PRIMARY KEY IDENTITY(1,1),
+#     organization_id VARCHAR(255),
+#     machine_id VARCHAR(255),
+#     sensor_id VARCHAR(255),
+#     prediction_time DATETIME, -- Time for which the prediction is made
+#     prediction_value FLOAT,
+#     prediction_datetime DATETIME -- Timestamp when the prediction was made
+# );
+
 
 # Sample dictionary of organizations, machines, sensors
 org_data = {
