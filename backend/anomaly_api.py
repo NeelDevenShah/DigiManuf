@@ -23,7 +23,6 @@ CONTAINER_NAME = ""
 
 BLOB_CONNECTION_STRING = ""
 BLOB_CONTAINER_NAME = ""
-BLOB_MODEL_NAME = "model_anomaly.pkl"
 
 # Initialize BlobServiceClient
 blob_service_client = BlobServiceClient.from_connection_string(BLOB_CONNECTION_STRING)
