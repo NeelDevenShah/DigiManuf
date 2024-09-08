@@ -8,13 +8,110 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException
 # FastAPI app
 app = FastAPI()
 
-# TODO: Connect DB(auth one) and DB(timedate cosmos) and debug
-
 # CosmosDB config
 COSMOS_DB_ENDPOINT = ""
 COSMOS_DB_KEY = ""
 DATABASE_NAME = ""
 CONTAINER_NAME = ""
+
+# TODO: Connect DB(auth one) and DB(timedate cosmos), DB (log of training) and debug
+
+# TODO: Schema of the sql database for training log
+# CREATE TABLE model_training_log (
+#     id SERIAL PRIMARY KEY,
+#     organization_id VARCHAR(255) NOT NULL,
+#     machine_id VARCHAR(255) NOT NULL,
+#     sensor_id VARCHAR(255) NOT NULL,
+#     start_time TIMESTAMP NOT NULL,
+#     end_time TIMESTAMP,
+#     status VARCHAR(100) DEFAULT 'PENDING',
+#     message VARCHAR(100),
+#     model_type VARCHAR(30),
+# );
+
+ANOMALY_URL = "http://0.0.0.0:8000/predict_anomaly"
+TRAINING_URL = "http://0.0.0.0:8000/train_anomaly_model"
+
+#####################
+    # Training Code
+
+# SQL DB connection config for logging training data
+SQL_SERVER = "your_sql_server.database.windows.net"
+SQL_DATABASE = "your_database"
+SQL_USERNAME = "your_username"
+SQL_PASSWORD = "your_password"
+SQL_DRIVER = "{ODBC Driver 17 for SQL Server}"
+
+# Function to log training status to SQL DB
+def log_training_to_sql(organization_id, machine_id, sensor_id, start_time, end_time, status, message, model_type):
+    conn_str = f"DRIVER={SQL_DRIVER};SERVER={SQL_SERVER};DATABASE={SQL_DATABASE};UID={SQL_USERNAME};PWD={SQL_PASSWORD}"
+    conn = pyodbc.connect(conn_str)
+    cursor = conn.cursor()
+
+    insert_query = """
+    INSERT INTO training_logs (organization_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """
+    cursor.execute(insert_query, (organization_id, machine_id, sensor_id, start_time, end_time, status, message, model_type))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+# Function to call the training API and log results
+def call_training_api(organization_id: str, machine_id: str, sensor_id: str):
+    payload = {
+        "organization_id": organization_id,
+        "machine_id": machine_id,
+        "sensor_id": sensor_id
+    }
+
+    start_time = datetime.now()
+
+    try:
+        # Call the training API
+        response = requests.post(TRAINING_URL, json=payload)
+
+        # Check the response status
+        if response.status_code == 200:
+            status = "success"
+            message = "Training completed successfully"
+        else:
+            status = "failure"
+            message = f"Failed to train model: {response.content}"
+
+    except Exception as e:
+        status = "failure"
+        message = str(e)
+
+    end_time = datetime.now()
+
+    # Log training details to SQL
+    model_type = "anomaly"
+    log_training_to_sql(organization_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
+
+# Function to schedule training every 24 hours for each sensor
+async def training_task():
+    while True:
+        organizations = ["org_001", "org_002"]  # Example organizations, can be dynamically fetched
+        for organization_id in organizations:
+            machines = ["mach_001", "mach_002"]  # Example machines
+            for machine_id in machines:
+                sensors = ["sens_001", "sens_002"]  # Example sensors
+                for sensor_id in sensors:
+                    # Call training API and log results
+                    call_training_api(organization_id, machine_id, sensor_id)
+        
+        await asyncio.sleep(86400)  # Sleep for 24 hours
+
+# Manual training trigger
+@app.post("/manual_trigger_training")
+async def manual_trigger_training(organization_id: str, machine_id: str, sensor_id: str):
+    # Call training API immediately and log the result
+    call_training_api(organization_id, machine_id, sensor_id)
+    return {"detail": "Manual training completed"}
+
+######################
 
 # Function to fetch data from CosmosDB (last 10 minutes)
 def fetch_data_from_cosmos(organization_id: str, machine_id: str, sensor_id: str):
@@ -40,7 +137,7 @@ def fetch_data_from_cosmos(organization_id: str, machine_id: str, sensor_id: str
 
 # Function to call anomaly detection API
 def call_anomaly_api(data):
-    api_url = "http://0.0.0.0:8000/predict_anomaly"
+    api_url = ANOMALY_URL
     
     payload = {
         "organization_id": data["organization_id"],
@@ -123,6 +220,7 @@ async def manual_trigger_anomaly(organization_id: str, machine_id: str, sensor_i
 @app.on_event("startup")
 async def start_background_tasks():
     asyncio.create_task(anomaly_detection_task())
+    asyncio.create_task(training_task())
 
 if __name__ == "__main__":
     import uvicorn
