@@ -29,6 +29,8 @@ CONTAINER_NAME = ""
 #     model_type VARCHAR(30),
 # );
 
+# The value of the anomaly is itself stored in the azure cosmos database, by increasing the one key value pair.
+
 ANOMALY_URL = "http://0.0.0.0:8000/predict_anomaly"
 TRAINING_URL = "http://0.0.0.0:8000/train_anomaly_model"
 
