@@ -24,19 +24,20 @@ SQL_CONNECTION_STRING = "DRIVER={ODBC Driver 17 for SQL Server};SERVER=your_serv
 # CREATE TABLE sensor_categories (
 #     id INT PRIMARY KEY IDENTITY(1,1),
 #     organization_id VARCHAR(50) NOT NULL,
+#     unit_id VARCHAR(50) NOT NULL,
 #     machine_id VARCHAR(50) NOT NULL,
 #     sensor_id VARCHAR(50) NOT NULL,
 #     category VARCHAR(50) NOT NULL,
 #     created_at DATETIME DEFAULT GETDATE(),
 #     updated_at DATETIME DEFAULT GETDATE(),
-#     CONSTRAINT UC_OrganizationMachineSensor UNIQUE (organization_id, machine_id, sensor_id)
+#     CONSTRAINT UC_OrganizationMachineSensor UNIQUE (organization_id, unit_id, machine_id, sensor_id)
 # );
 
 # # Fetch data for a specific time range
 # # start_time = datetime(2023, 5, 1, 0, 0, 0)
 # # end_time = datetime(2023, 5, 2, 0, 0, 0)
 # # result = fetch_and_format_data('org123', 'machine456', 'sensor789', start_time, end_time)
-def fetch_anomaly_data_for_sensors(organization_id: str, machine_id: str, sensor_id: str, start_time: datetime = None, end_time: datetime = None):
+def fetch_anomaly_data_for_sensors(organization_id: str, unit_id: str, machine_id: str, sensor_id: str, start_time: datetime = None, end_time: datetime = None):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
     database = client.get_database_client(DATABASE_NAME)
     container = database.get_container_client(CONTAINER_NAME)
@@ -52,6 +53,7 @@ def fetch_anomaly_data_for_sensors(organization_id: str, machine_id: str, sensor
     # Query data for the specified time range
     query = f"""SELECT * FROM c 
                 WHERE c.organization_id = '{organization_id}' 
+                AND c.unit_id = '{unit_id}' 
                 AND c.machine_id = '{machine_id}' 
                 AND c.sensor_id = '{sensor_id}' 
                 AND c.datetime >= '{start_time_str}'
@@ -84,6 +86,7 @@ def fetch_anomaly_data_for_sensors(organization_id: str, machine_id: str, sensor
     # Prepare the final JSON output
     output = {
         'organization_id': organization_id,
+        'unit_id': unit_id,
         'machine_id': machine_id,
         'sensor_id': sensor_id,
         'data': time_series_data
@@ -91,17 +94,17 @@ def fetch_anomaly_data_for_sensors(organization_id: str, machine_id: str, sensor
 
     return output
 
-def fetch_sensor_categories(organization_id: str, machine_id: str):
+def fetch_sensor_categories(organization_id: str, unit_id: str, machine_id: str):
     conn = pyodbc.connect(SQL_CONNECTION_STRING)
     cursor = conn.cursor()
     
     query = """
     SELECT sensor_id, category
     FROM sensor_categories
-    WHERE organization_id = ? AND machine_id = ?
+    WHERE organization_id = ? AND unit_id = ? AND machine_id = ?
     """
     
-    cursor.execute(query, (organization_id, machine_id))
+    cursor.execute(query, (organization_id, unit_id, machine_id))
     categories = {row.sensor_id: row.category for row in cursor.fetchall()}
     
     cursor.close()
@@ -109,8 +112,10 @@ def fetch_sensor_categories(organization_id: str, machine_id: str):
     
     return categories
 
-# Can be called for specifci machine by passing specific machine_id, or can be passed based on the organization_id
-def fetch_anomaly_data_for_sensors_by_category(organization_id: str, machine_id: str, start_time: datetime = None, end_time: datetime = None):
+# TODO: API making and also pydantic classes for input and output
+# TODO: Common thing for the upper hierarchy calling of the API
+# TODO: Can be called for specific machine by passing specific machine_id, or can be passed based on the organization_id
+def fetch_anomaly_data_for_sensors_by_category(organization_id: str, unit_id:str, machine_id: str, start_time: datetime = None, end_time: datetime = None):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
     database = client.get_database_client(DATABASE_NAME)
     container = database.get_container_client(CONTAINER_NAME)
@@ -126,6 +131,7 @@ def fetch_anomaly_data_for_sensors_by_category(organization_id: str, machine_id:
     # Query data for the specified time range
     query = f"""SELECT * FROM c 
                 WHERE c.organization_id = '{organization_id}' 
+                AND c.unit_id = '{unit_id}' 
                 AND c.machine_id = '{machine_id}' 
                 AND c.datetime >= '{start_time_str}'
                 AND c.datetime <= '{end_time_str}'"""
@@ -135,7 +141,7 @@ def fetch_anomaly_data_for_sensors_by_category(organization_id: str, machine_id:
     print(f"Fetched {len(df)} records from {start_time_str} to {end_time_str} for {organization_id}, {machine_id}")
 
     # Fetch sensor categories
-    sensor_categories = fetch_sensor_categories(organization_id, machine_id)
+    sensor_categories = fetch_sensor_categories(organization_id, unit_id, machine_id)
     df['category'] = df['sensor_id'].map(sensor_categories)
 
     # Process data into 10-minute intervals
@@ -166,6 +172,7 @@ def fetch_anomaly_data_for_sensors_by_category(organization_id: str, machine_id:
     # Prepare the final JSON output
     output = {
         'organization_id': organization_id,
+        'unit_id': unit_id,
         'machine_id': machine_id,
         'data': category_data
     }

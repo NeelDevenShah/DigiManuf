@@ -21,6 +21,7 @@ CONTAINER_NAME = ""
 #     id SERIAL PRIMARY KEY,
 #     organization_id VARCHAR(255) NOT NULL,
 #     machine_id VARCHAR(255) NOT NULL,
+#     unit_id VARCHAR(255) NOT NULL,
 #     sensor_id VARCHAR(255) NOT NULL,
 #     start_time TIMESTAMP NOT NULL,
 #     end_time TIMESTAMP,

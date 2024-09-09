@@ -14,7 +14,7 @@ app = FastAPI()
 # CREATE TABLE sensor_predictions (
 #     id INT PRIMARY KEY IDENTITY(1,1),
 #     organization_id VARCHAR(255),
-#     unit_id
+#     unit_id VARCHAR(255),
 #     machine_id VARCHAR(255),
 #     sensor_id VARCHAR(255),
 #     prediction_time DATETIME, -- Time for which the prediction is made
@@ -26,7 +26,7 @@ app = FastAPI()
 # CREATE TABLE model_training_log (
 #     id SERIAL PRIMARY KEY,
 #     organization_id VARCHAR(255) NOT NULL,
-#     unit_id
+#     unit_id VARCHAR(255) NOT NULL,
 #     machine_id VARCHAR(255) NOT NULL,
 #     sensor_id VARCHAR(255) NOT NULL,
 #     start_time TIMESTAMP NOT NULL,
