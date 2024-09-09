@@ -10,6 +10,7 @@ from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 import joblib
 import os
 from datetime import datetime
+import uvicorn
 
 # FastAPI app
 app = FastAPI()
@@ -22,7 +23,10 @@ CONTAINER_NAME = ""
 
 BLOB_CONNECTION_STRING = ""
 BLOB_CONTAINER_NAME = ""
-BLOB_MODEL_NAME = "model_anomaly.pkl"
+
+# Initialize BlobServiceClient
+blob_service_client = BlobServiceClient.from_connection_string(BLOB_CONNECTION_STRING)
+container_client = blob_service_client.get_container_client(BLOB_CONTAINER_NAME)
 
 # Function to fetch data from Cosmos DB
 def fetch_data_from_cosmos(organization_id: str, machine_id: str, sensor_id: str):
@@ -60,33 +64,38 @@ def train_model(df):
     return model, scaler
 
 # Function to save the model to Azure Blob Storage
-def save_model_to_blob(model, scaler, is_backup=False):
-    filename = BLOB_MODEL_NAME if not is_backup else f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}_model_anomaly.pkl"
+def save_model_to_blob(model, model_type, organization_id , machine_id, sensor_id):
+    model_name = f"{organization_id}_{machine_id}_{sensor_id}_{model_type}.pkl"
     
-    # Save model and scaler to a local file
-    with open(filename, "wb") as f:
-        joblib.dump((model, scaler), f)
-
+    # Save model to a local file
+    with open(model_name, "wb") as f:
+        joblib.dump(model, f)
+    
     # Create a BlobServiceClient
-    blob_service_client = BlobServiceClient.from_connection_string(BLOB_CONNECTION_STRING)
-    blob_client = blob_service_client.get_blob_client(container=BLOB_CONTAINER_NAME, blob=filename)
+    blob_client = blob_service_client.get_blob_client(container=BLOB_CONTAINER_NAME, blob=f"{organization_id}/{machine_id}/{sensor_id}/{model_type}.pkl")
     
     # Upload the model file to Blob Storage
-    with open(filename, "rb") as data:
+    with open(model_name, "rb") as data:
         blob_client.upload_blob(data, overwrite=True)
+    os.remove(model_name)
 
-# Function to load the model from Azure Blob Storage
-def load_model_from_blob():
-    blob_service_client = BlobServiceClient.from_connection_string(BLOB_CONNECTION_STRING)
-    blob_client = blob_service_client.get_blob_client(container=BLOB_CONTAINER_NAME, blob=BLOB_MODEL_NAME)
+# Load model from Azure Blob Storage
+def load_model_from_azure(organization_id, machine_id, sensor_id, model_type):
+    model_name = f"{organization_id}_{machine_id}_{sensor_id}_{model_type}.pkl"
+    
+    blob_client = blob_service_client.get_blob_client(container=BLOB_CONTAINER_NAME, blob=f"{organization_id}/{machine_id}/{sensor_id}/{model_type}.pkl")
     
     # Download the model file from Blob Storage
-    with open("model_anomaly.pkl", "wb") as download_file:
+    with open(model_name, "wb") as download_file:
         download_file.write(blob_client.download_blob().readall())
 
     # Load the model from the file
-    model, scaler = joblib.load("model_anomaly.pkl")
-    return model, scaler
+    model = joblib.load(model_name)
+    
+    os.remove(model_name)
+    print(f"Model loaded from {model_name} (downloaded from Azure Blob Storage)")
+    
+    return model
 
 class AnomalyDetectionInput(BaseModel):
     temperature: float
@@ -116,12 +125,13 @@ class TrainingInput(BaseModel):
     machine_id: str
     sensor_id: str
     
+class TrainingOutput(BaseModel):
+    code: int
+    msg: str
+    
 # API to trigger training and replace the running model
-@app.post("/train_anomaly_model")
+@app.post("/train_anomaly_model", response_model=TrainingOutput)
 def train_and_store_model(data: TrainingInput):
-    global model, scaler
-
-    # TODO setup according to the data.organization_id, data.machine_id, data.sensor_id
 
     # Fetch data from Cosmos DB
     df = fetch_data_from_cosmos(organization_id=data.organization_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
@@ -130,21 +140,17 @@ def train_and_store_model(data: TrainingInput):
     model, scaler = train_model(df)
 
     # Save the new model to Blob Storage and update the running model
-    save_model_to_blob(model, scaler)
+    save_model_to_blob(model, model_type="anomaly", organization_id=data.organization_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
     
-    return {"message": "Model trained, updated, and saved to blob storage"}
-
-# API to predict anomaly
-# Add the dictionary thing, for selcting model, or check for any other option possible
-# 2. An another option is to download and train, on demand instead of the having one on initial time
+    save_model_to_blob(scaler, model_type="scaler", organization_id=data.organization_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
+    
+    return TrainingOutput(code=200, msg="Model trained and saved to the azure blob")
 
 @app.post("/predict_anomaly", response_model=AnomalyDetectionOutput)
 def predict_anomaly(data: AnomalyDetectionInput):
-    global model, scaler
-    if model is None or scaler is None:
-        return {"error": "Model not loaded. Train the model first."}
-
-    # TODO setup according to the data.organization_id, data.machine_id, data.sensor_id
+    
+    model = load_model_from_azure(data.organization_id, data.machine_id, data.sensor_id, 'anomaly')
+    scaler = load_model_from_azure(data.organization_id, data.machine_id, data.sensor_id, 'scaler')
     
     # Convert input data to numpy array
     instance = np.array([
@@ -170,18 +176,4 @@ def predict_anomaly(data: AnomalyDetectionInput):
     return AnomalyDetectionOutput(is_anomaly=(prediction[0] == -1), organization_id=data.organization_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
 
 if __name__ == "__main__":
-    import uvicorn
-    
-    global organization_id, machine_id, sensor_id, model, scaler
-    organization_id = "org_001"
-    machine_id = "mach_001"
-    sensor_id = "sens_001"
-    
-    try:
-        model, scaler = load_model_from_blob()
-        print("Model loaded from blob storage")
-    except Exception as e:
-        print("Failed to load model. Error:", e)
-        model, scaler = None, None
-    
     uvicorn.run(app, host="0.0.0.0", port=8000)
