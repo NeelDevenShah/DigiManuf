@@ -9,7 +9,7 @@ from azure.cosmos import CosmosClient
 from azure.storage.blob import BlobServiceClient
 import joblib
 
-# TODO Debugging
+# TODO Debugging and editing
 
 app = FastAPI()
 
@@ -28,7 +28,7 @@ PREDICTION_MODEL_NAME = "model_prediction.pkl"
 
 # TODO: Change the sql query
 # Placeholder functions for fetching data and models
-def fetch_sensor_data(organization_id: str, machine_id: str, sensor_id: str, start_time: datetime, end_time: datetime):
+def fetch_sensor_data(organization_id: str, unit_id:str, machine_id: str, sensor_id: str, start_time: datetime, end_time: datetime):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
     database = client.get_database_client(DATABASE_NAME)
     container = database.get_container_client(CONTAINER_NAME)
