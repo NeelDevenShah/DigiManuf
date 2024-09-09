@@ -102,7 +102,7 @@ def save_model_to_blob(model, organization_id, unit_id, machine_id, sensor_id):
 
 # Load model from Azure Blob Storage
 def load_model_from_azure(organization_id, unit_id, machine_id, sensor_id, model_type):
-    model_name = f"{organization_id_{unit_id}}_{machine_id}_{sensor_id}_{model_type}.pkl"
+    model_name = f"{organization_id}_{unit_id}_{machine_id}_{sensor_id}_{model_type}.pkl"
     
     blob_client = blob_service_client.get_blob_client(container=BLOB_CONTAINER_NAME, blob=f"{organization_id}/{unit_id}/{machine_id}/{sensor_id}/{model_type}.pkl")
     

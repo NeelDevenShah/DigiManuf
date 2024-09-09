@@ -37,7 +37,7 @@ def fetch_data_from_cosmos(organization_id: str, unit_id: str, machine_id: str, 
     # Query all the data from the container
     query = f"""SELECT * FROM c 
     WHERE c.organization_id = '{organization_id}' 
-    WHERE c.unit_id = '{unit_id}' 
+    AND c.unit_id = '{unit_id}' 
     AND c.machine_id = '{machine_id}' 
     AND c.sensor_id = '{sensor_id}' """
     items = list(container.query_items(query=query, enable_cross_partition_query=True))
@@ -138,15 +138,15 @@ class TrainingOutput(BaseModel):
 def train_and_store_model(data: TrainingInput):
 
     # Fetch data from Cosmos DB
-    df = fetch_data_from_cosmos(organization_id=data.organization_id, unit_id=unit_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
+    df = fetch_data_from_cosmos(organization_id=data.organization_id, unit_id=data.unit_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
 
     # Train the new model
     model, scaler = train_model(df)
 
     # Save the new model to Blob Storage and update the running model
-    save_model_to_blob(model, model_type="anomaly", organization_id=data.organization_id, unit_id=unit_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
+    save_model_to_blob(model, model_type="anomaly", organization_id=data.organization_id, unit_id=data.unit_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
     
-    save_model_to_blob(scaler, model_type="scaler", organization_id=data.organization_id, unit_id=unit_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
+    save_model_to_blob(scaler, model_type="scaler", organization_id=data.organization_id, unit_id=data.unit_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
     
     return TrainingOutput(code=200, msg="Model trained and saved to the azure blob")
 
