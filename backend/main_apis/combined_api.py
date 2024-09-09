@@ -174,8 +174,8 @@ def load_model_from_azure(organization_id, unit_id, machine_id, sensor_id, model
 # API to train models
 @app.post("/train_models", response_model=TrainingOutput)
 async def train_models(data: TrainingInput):
-    df = await fetch_data_from_cosmos(data.organization_id, unit_id, data.machine_id, data.sensor_id)
-    await train_and_save_models(df, data.organization_id, unit_id, data.machine_id, data.sensor_id)
+    df = await fetch_data_from_cosmos(data.organization_id, data.unit_id, data.machine_id, data.sensor_id)
+    await train_and_save_models(df, data.organization_id, data.unit_id, data.machine_id, data.sensor_id)
     return TrainingOutput(code=200, msg="Model trained and saved to the azure blob")
 
 # API to predict values

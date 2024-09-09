@@ -68,13 +68,13 @@ def upload_data_to_cosmos(df):
         formatted_datetime = datetime_obj.strftime('%Y_%m_%dT%H_%M_%S')
 
         # Create the id using formatted datetime
-        item['id'] = f"org{item['organization_id']}_unt{item['unit_id']}_mach{item['machine_id']}_sens{item['sensor_id']}_date{formatted_datetime}"
+        item['id'] = f"{item['organization_id']}_{item['unit_id']}_{item['machine_id']}_{item['sensor_id']}_date_{formatted_datetime}"
         container.upsert_item(item)
 
     print(f"Data uploaded to Azure Cosmos DB container '{CONTAINER_NAME}'.")
 
 # Generate the dummy data
-dummy_data = generate_dummy_data_with_datetime(num_samples=100, organization_id="001", unit_id="001", machine_id="002", sensor_id="001")
+dummy_data = generate_dummy_data_with_datetime(num_samples=100, organization_id="org001", unit_id="unt001", machine_id="mac002", sensor_id="sen002")
 
 # Save the dummy data to a CSV file if needed
 dummy_data.to_csv('dummy_data.csv', index=False)
