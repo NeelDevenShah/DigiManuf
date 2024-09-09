@@ -45,16 +45,16 @@ SQL_PASSWORD = "your_password"
 SQL_DRIVER = "{ODBC Driver 17 for SQL Server}"
 
 # Function to log training status to SQL DB
-def log_training_to_sql(organization_id, machine_id, sensor_id, start_time, end_time, status, message, model_type):
+def log_training_to_sql(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type):
     conn_str = f"DRIVER={SQL_DRIVER};SERVER={SQL_SERVER};DATABASE={SQL_DATABASE};UID={SQL_USERNAME};PWD={SQL_PASSWORD}"
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
 
     insert_query = """
-    INSERT INTO training_logs (organization_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO training_logs (organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
-    cursor.execute(insert_query, (organization_id, machine_id, sensor_id, start_time, end_time, status, message, model_type))
+    cursor.execute(insert_query, (organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type))
     
     conn.commit()
     cursor.close()
@@ -64,6 +64,7 @@ def log_training_to_sql(organization_id, machine_id, sensor_id, start_time, end_
 def call_training_api(organization_id: str, machine_id: str, sensor_id: str):
     payload = {
         "organization_id": organization_id,
+        "unit_id": unit_id,
         "machine_id": machine_id,
         "sensor_id": sensor_id
     }
@@ -90,7 +91,7 @@ def call_training_api(organization_id: str, machine_id: str, sensor_id: str):
 
     # Log training details to SQL
     model_type = "anomaly"
-    log_training_to_sql(organization_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
+    log_training_to_sql(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
 
 # Function to schedule training every 24 hours for each sensor
 async def training_task():
@@ -102,21 +103,21 @@ async def training_task():
                 sensors = ["sens_001", "sens_002"]  # Example sensors
                 for sensor_id in sensors:
                     # Call training API and log results
-                    call_training_api(organization_id, machine_id, sensor_id)
+                    call_training_api(organization_id, unit_id, machine_id, sensor_id)
         
         await asyncio.sleep(86400)  # Sleep for 24 hours
 
 # Manual training trigger
 @app.post("/manual_trigger_training")
-async def manual_trigger_training(organization_id: str, machine_id: str, sensor_id: str):
+async def manual_trigger_training(organization_id: str, unit_id: str, machine_id: str, sensor_id: str):
     # Call training API immediately and log the result
-    call_training_api(organization_id, machine_id, sensor_id)
+    call_training_api(organization_id, unit_id, machine_id, sensor_id)
     return {"detail": "Manual training completed"}
 
 ######################
 
 # Function to fetch data from CosmosDB (last 10 minutes)
-def fetch_data_from_cosmos(organization_id: str, machine_id: str, sensor_id: str):
+def fetch_data_from_cosmos(organization_id: str, unit_id: str, achine_id: str, sensor_id: str):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
     database = client.get_database_client(DATABASE_NAME)
     container = database.get_container_client(CONTAINER_NAME)
@@ -128,6 +129,7 @@ def fetch_data_from_cosmos(organization_id: str, machine_id: str, sensor_id: str
     # Query data from last 10 minutes
     query = f"""SELECT * FROM c 
                 WHERE c.organization_id = '{organization_id}' 
+                AND c.unit_id = '{unit_id}' 
                 AND c.machine_id = '{machine_id}' 
                 AND c.sensor_id = '{sensor_id}' 
                 AND c.datetime >= '{ten_minutes_ago_str}'"""
@@ -143,6 +145,7 @@ def call_anomaly_api(data):
     
     payload = {
         "organization_id": data["organization_id"],
+        "unit_id": data["unit_id"],
         "machine_id": data["machine_id"],
         "sensor_id": data["sensor_id"],
         "datetime": data["datetime"],
@@ -195,22 +198,24 @@ async def anomaly_detection_task():
         
         organizations = ["org_001", "org_002"]  # You can modify or dynamically fetch organizations
         for organization_id in organizations:
-            # Iterate over machines and sensors (similar to org_data in previous examples)
-            machines = ["mach_001", "mach_002"]  # Example machines
-            for machine_id in machines:
-                sensors = ["sens_001", "sens_002"]  # Example sensors
-                for sensor_id in sensors:
-                    # Fetch data from CosmosDB for each sensor
-                    df = fetch_data_from_cosmos(organization_id, machine_id, sensor_id)
-                    if not df.empty:
-                        # Process anomaly detection and update DB
-                        process_anomaly_detection(df)
+            units = ["unt_001", "unt_002"]  # You can modify or dynamically fetch organizations
+            for unit_id in units:
+                # Iterate over machines and sensors (similar to org_data in previous examples)
+                machines = ["mach_001", "mach_002"]  # Example machines
+                for machine_id in machines:
+                    sensors = ["sens_001", "sens_002"]  # Example sensors
+                    for sensor_id in sensors:
+                        # Fetch data from CosmosDB for each sensor
+                        df = fetch_data_from_cosmos(organization_id, unit_id, machine_id, sensor_id)
+                        if not df.empty:
+                            # Process anomaly detection and update DB
+                            process_anomaly_detection(df)
         await asyncio.sleep(300)  # Run every 5 minutes
 
 # Manual trigger for immediate anomaly detection
 @app.post("/manual_trigger_anomaly")
-async def manual_trigger_anomaly(organization_id: str, machine_id: str, sensor_id: str, background_tasks: BackgroundTasks):
-    df = fetch_data_from_cosmos(organization_id, machine_id, sensor_id)
+async def manual_trigger_anomaly(organization_id: str, unit_id: str, machine_id: str, sensor_id: str, background_tasks: BackgroundTasks):
+    df = fetch_data_from_cosmos(organization_id, unit_id, machine_id, sensor_id)
     if df.empty:
         raise HTTPException(status_code=404, detail="No data found for the given parameters")
     
