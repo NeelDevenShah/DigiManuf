@@ -5,6 +5,8 @@ import requests
 import pyodbc
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 
+# TODO: Testing
+
 # FastAPI app
 app = FastAPI()
 
@@ -73,6 +75,7 @@ SQL_SERVER = "your_sql_server.database.windows.net"
 SQL_DATABASE = "your_database"
 SQL_USERNAME = "your_username"
 SQL_PASSWORD = "your_password"
+# TODO, check driver with the old code
 SQL_DRIVER = "{ODBC Driver 17 for SQL Server}"
 
 # Function to log training status to SQL DB
@@ -198,7 +201,7 @@ def store_prediction_in_azure_sql(data, periods):
     conn.commit()
 
 # Schedule task for every 2 hours
-async def schedule_api_calls(periods=5):
+async def schedule_api_calls(periods=24):
     while True:
         for org_id, org_info in org_data.items():
             for mach_id, mach_info in org_info["machines"].items():
