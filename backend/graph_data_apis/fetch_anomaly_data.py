@@ -5,7 +5,7 @@ import pandas as pd
 import pyodbc
 import uvicor
 from fastapi import FastAPI, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import List, Optional
 from fastapi.responses import JSONResponsen
 
@@ -51,10 +51,28 @@ SQL_CONNECTION_STRING = "DRIVER={ODBC Driver 17 for SQL Server};SERVER=your_serv
 #     CONSTRAINT UC_OrganizationMachineSensor UNIQUE (organization_id, unit_id, machine_id)
 # );
 
-# # Fetch data for a specific time range
-# # start_time = datetime(2023, 5, 1, 0, 0, 0)
-# # end_time = datetime(2023, 5, 2, 0, 0, 0)
-# # result = fetch_and_format_data('org123', 'unt001', 'machine456', 'sensor789', start_time, end_time)
+############# For fetching anomaly the data related to the particular sensor
+
+class SensorAnomalyDataRequest(BaseModel):
+    organization_id: str
+    unit_id: str
+    machine_id: str
+    sensor_id: str
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+
+@app.post("/fetch_anomaly_data_for_sensors")
+def fetch_anomaly_data_for_sensors_api(request: SensorAnomalyDataRequest):
+    organization_id = request.organization_id
+    unit_id = request.unit_id
+    machine_id = request.machine_id
+    sensor_id = request.sensor_id
+    start_time = request.start_time
+    end_time = request.end_time
+    
+    output = fetch_anomaly_data_for_sensors(organization_id, unit_id, machine_id, sensor_id, start_time, end_time)
+    return output
+
 def fetch_anomaly_data_for_sensors(organization_id: str, unit_id: str, machine_id: str, sensor_id: str, start_time: datetime = None, end_time: datetime = None):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
     database = client.get_database_client(DATABASE_NAME)
@@ -115,20 +133,20 @@ def fetch_anomaly_data_for_sensors(organization_id: str, unit_id: str, machine_i
 # API and functions done
 
 
-################### For data related to the all sensor categories
+################### For fetching anomaly data related to the all sensor categories
 
 class SensorCategoryRequest(BaseModel):
-    organization_id: str = Field(..., description="Organization ID")
-    unit_id: Optional[str] = Field(None, description="Unit ID (optional)")
-    machine_id: Optional[str] = Field(None, description="Machine ID (optional)")
+    organization_id: str
+    unit_id: Optional[str] = None
+    machine_id: Optional[str] = None
 
 # Model for fetching anomaly data with optional date range
 class AnomalyDataRequest(BaseModel):
-    organization_id: str = Field(..., description="Organization ID")
-    unit_id: Optional[str] = Field(None, description="Unit ID (optional)")
-    machine_id: Optional[str] = Field(None, description="Machine ID (optional)")
-    start_time: Optional[datetime] = Field(None, description="Start Time (optional, defaults to 24 hours ago)")
-    end_time: Optional[datetime] = Field(None, description="End Time (optional, defaults to current time)")
+    organization_id: str
+    unit_id: Optional[str] = None
+    machine_id: Optional[str] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
     
 @app.post("/fetch_sensor_categories")
 def fetch_sensor_categories_api(request: SensorCategoryRequest):
@@ -269,7 +287,7 @@ def fetch_anomaly_data_for_sensors_by_all_category(organization_id: str, unit_id
     return output
 
 
-################## For data related to the particular sensor categories
+################## For fetching anomaly data related to the particular sensor categories
 
 def fetch_sensor_ids_by_categories(organization_id: str, sensor_categories: list, unit_id: str = None, machine_id: str = None):
     conn = pyodbc.connect(SQL_CONNECTION_STRING)
