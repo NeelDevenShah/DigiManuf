@@ -17,10 +17,11 @@ COSMOS_DB_KEY = ""
 DATABASE_NAME = ""
 CONTAINER_NAME = ""
 
-SQL_SERVER = "your_sql_server.database.windows.net"
-SQL_DATABASE = "your_database"
-SQL_USERNAME = "your_username"
-SQL_PASSWORD = "your_password"
+SQL_SERVER = ""
+SQL_DATABASE = ""
+SQL_USERNAME = ""
+SQL_PASSWORD = ""
+# TODO, check driver with the old code
 SQL_DRIVER = "{ODBC Driver 17 for SQL Server}"
 
 # SQL Server connection string
@@ -60,6 +61,18 @@ class SensorAnomalyDataRequest(BaseModel):
     sensor_id: str
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
+    
+class TimeSeriesData(BaseModel):
+    timestamp: datetime
+    value: float
+    is_anomaly: bool
+
+class SensorDataOutput(BaseModel):
+    organization_id: str
+    unit_id: str
+    machine_id: str
+    sensor_id: str
+    data: List[TimeSeriesData]
 
 @app.post("/fetch_anomaly_data_for_sensors")
 def fetch_anomaly_data_for_sensors_api(request: SensorAnomalyDataRequest):
@@ -112,23 +125,23 @@ def fetch_anomaly_data_for_sensors(organization_id: str, unit_id: str, machine_i
 
     # Format data for JSON output
     time_series_data = []
+
     for timestamp, row in resampled.iterrows():
-        time_series_data.append({
-            'timestamp': timestamp.strftime('%Y-%m-%d %H:%M:%S'),
-            'value': row['value'],
-            'is_anomaly': bool(row['is_anomaly'])
-        })
+        # Use Pydantic model for time series data
+        time_series_data.append(TimeSeriesData(
+            timestamp=timestamp,  # Keep as a datetime object, Pydantic will handle formatting
+            value=row['value'],
+            is_anomaly=bool(row['is_anomaly'])
+        ))
 
-    # Prepare the final JSON output
-    output = {
-        'organization_id': organization_id,
-        'unit_id': unit_id,
-        'machine_id': machine_id,
-        'sensor_id': sensor_id,
-        'data': time_series_data
-    }
-
-    return output
+    # Prepare the final output using the Pydantic model
+    output = SensorDataOutput(
+        organization_id=organization_id,
+        unit_id=unit_id,
+        machine_id=machine_id,
+        sensor_id=sensor_id,
+        data=time_series_data
+    )
 
 # API and functions done
 
@@ -148,7 +161,7 @@ class AnomalyDataRequest(BaseModel):
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     
-@app.post("/fetch_sensor_categories")
+@app.post("/fetch_sensor_categories", response_model=SensorCategoryResponse)
 def fetch_sensor_categories_api(request: SensorCategoryRequest):
     categories = fetch_sensor_categories(
         organization_id=request.organization_id,
@@ -157,9 +170,9 @@ def fetch_sensor_categories_api(request: SensorCategoryRequest):
     )
     
     if not categories:
-        return {"message": "No categories found for the specified criteria"}
+        return SensorCategoryResponse(message="No categories found for the specified criteria")
     
-    return {"sensor_categories": categories}
+    return SensorCategoryResponse(sensor_categories=categories)
 
 @app.post("/fetch_anomaly_data_for_sensors_by_all_category")
 def fetch_anomaly_data_api(request: AnomalyDataRequest):
@@ -213,6 +226,12 @@ def fetch_sensor_categories(organization_id: str, unit_id: str = None, machine_i
     conn.close()
 
     return categories
+
+class SensorCategoryDataResponse(BaseModel):
+    organization_id: str
+    unit_id: str
+    machine_id: str
+    data: Dict[str, List[TimeSeriesData]] 
 
 def fetch_anomaly_data_for_sensors_by_all_category(organization_id: str, unit_id: str = None, machine_id: str = None, start_time: datetime = None, end_time: datetime = None):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
@@ -268,21 +287,21 @@ def fetch_anomaly_data_for_sensors_by_all_category(organization_id: str, unit_id
         
         time_series_data = []
         for timestamp, row in resampled.iterrows():
-            time_series_data.append({
-                'timestamp': timestamp.strftime('%Y-%m-%d %H:%M:%S'),
-                'value': row['value'],
-                'is_anomaly': bool(row['is_anomaly'])
-            })
+            time_series_data.append(TimeSeriesData(
+                timestamp=timestamp,  # Keep as datetime, Pydantic will handle formatting
+                value=row['value'],
+                is_anomaly=bool(row['is_anomaly'])
+            ))
         
         category_data[category] = time_series_data
 
-    # Prepare the final JSON output
-    output = {
-        'organization_id': organization_id,
-        'unit_id': unit_id,
-        'machine_id': machine_id,
-        'data': category_data
-    }
+    # Prepare the final output using Pydantic
+    output = SensorCategoryDataResponse(
+        organization_id=organization_id,
+        unit_id=unit_id,
+        machine_id=machine_id,
+        data=category_data
+    )
 
     return output
 
@@ -362,6 +381,16 @@ async def fetch_anomaly_data(request: SensorCategoriesRequest):
 
     return result
 
+class SensorCategoryData(BaseModel):
+    sensor_id: str
+    data: List[TimeSeriesData]
+    
+class CategoryDataResponse(BaseModel):
+    organization_id: str
+    unit_id: str
+    machine_id: str
+    data: Dict[str, Dict[str, List[TimeSeriesData]]]
+
 # Adjusted fetch_anomaly_data function to make unit_id and machine_id optional
 def fetch_anomaly_data_for_sensors_by_categories(organization_id: str, sensor_categories: list, unit_id: Optional[str] = None, machine_id: Optional[str] = None, start_time: datetime = None, end_time: datetime = None):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
@@ -424,24 +453,25 @@ def fetch_anomaly_data_for_sensors_by_categories(organization_id: str, sensor_ca
         
         time_series_data = []
         for timestamp, row in resampled.iterrows():
-            time_series_data.append({
-                'timestamp': timestamp.strftime('%Y-%m-%d %H:%M:%S'),
-                'value': row['value'],
-                'is_anomaly': bool(row['is_anomaly'])
-            })
-        
+            time_series_data.append(TimeSeriesData(
+                timestamp=timestamp,  # Keep as datetime, Pydantic will handle formatting
+                value=row['value'],
+                is_anomaly=bool(row['is_anomaly'])
+            ))
+
         if category not in category_data:
             category_data[category] = {}
         category_data[category][sensor_id] = time_series_data
 
-    # Prepare the final JSON output
-    output = {
-        'organization_id': organization_id,
-        'unit_id': unit_id,
-        'machine_id': machine_id,
-        'data': category_data
-    }
+    # Prepare the final output using Pydantic
+    output = CategoryDataResponse(
+        organization_id=organization_id,
+        unit_id=unit_id,
+        machine_id=machine_id,
+        data=category_data
+    )
 
+    # Return the JSON representation of the output
     return output
 
 if __name__ == "__main__":

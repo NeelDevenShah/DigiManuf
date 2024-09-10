@@ -26,7 +26,6 @@ BLOB_CONTAINER_NAME = ""
 blob_service_client = BlobServiceClient.from_connection_string(BLOB_CONNECTION_STRING)
 container_client = blob_service_client.get_container_client(BLOB_CONTAINER_NAME)
 
-# Function to fetch data from Cosmos DB
 def fetch_data_from_cosmos(organization_id: str, unit_id: str, machine_id: str, sensor_id: str):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
     database = client.get_database_client(DATABASE_NAME)
@@ -47,8 +46,8 @@ def fetch_data_from_cosmos(organization_id: str, unit_id: str, machine_id: str, 
 
 # API to predict future sensor values
 class PredictionInput(BaseModel):
-    periods: int  # Number of future periods to predict
-    start_timestamp: Optional[str] = None  # Optional start timestamp in ISO format
+    periods: int
+    start_timestamp: Optional[str] = None 
     organization_id: str
     unit_id: str
     machine_id: str
