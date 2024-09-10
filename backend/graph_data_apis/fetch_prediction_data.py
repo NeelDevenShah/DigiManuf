@@ -29,29 +29,16 @@ SQL_CONNECTION_STRING = "DRIVER={ODBC Driver 17 for SQL Server};SERVER=your_serv
 
 app = FastAPI()
 
-# TODO SQL Schema
-# CREATE TABLE sensor_categories (
+# TODO: Schema of the sql database for output storage of prediciton
+# CREATE TABLE sensor_predictions (
 #     id INT PRIMARY KEY IDENTITY(1,1),
-#     organization_id VARCHAR(50) NOT NULL,
-#     unit_id VARCHAR(50) NOT NULL,
-#     machine_id VARCHAR(50) NOT NULL,
-#     sensor_id VARCHAR(50) NOT NULL,
-#     category VARCHAR(50) NOT NULL,
-#     created_at DATETIME DEFAULT GETDATE(),
-#     updated_at DATETIME DEFAULT GETDATE(),
-#     CONSTRAINT UC_OrganizationMachineSensor UNIQUE (organization_id, unit_id, machine_id, sensor_id)
-# );
-
-# TODO SQL Schema
-# CREATE TABLE machine_categories (
-#     id INT PRIMARY KEY IDENTITY(1,1),
-#     organization_id VARCHAR(50) NOT NULL,
-#     unit_id VARCHAR(50) NOT NULL,
-#     machine_id VARCHAR(50) NOT NULL,
-#     category VARCHAR(50) NOT NULL,
-#     created_at DATETIME DEFAULT GETDATE(),
-#     updated_at DATETIME DEFAULT GETDATE(),
-#     CONSTRAINT UC_OrganizationMachineSensor UNIQUE (organization_id, unit_id, machine_id)
+#     organization_id VARCHAR(255),
+#     unit_id VARCHAR(255),
+#     machine_id VARCHAR(255),
+#     sensor_id VARCHAR(255),
+#     prediction_time DATETIME, -- Time for which the prediction is made
+#     prediction_value FLOAT,
+#     prediction_datetime DATETIME -- Timestamp when the prediction was made
 # );
 
 # ################################
@@ -60,11 +47,15 @@ class TimeSeriesData(BaseModel):
     datetime: str
     value: float
 
-class SensorData(BaseModel):
+class DataRequest(BaseModel):
+    organization_id: str
+    unit_id: str
+    machine_id: str
     sensor_id: str
-    data: List[TimeSeriesData]
-
-class PredictionDataResponse(BaseModel):
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    
+class DataResponse(BaseModel):
     organization_id: str
     unit_id: str
     machine_id: str
@@ -95,8 +86,8 @@ def fetch_data_from_cosmos(organization_id: str, unit_id: str, machine_id: str, 
     
     return [TimeSeriesData(datetime=row['datetime'].strftime('%Y-%m-%d %H:%M:%S'), value=row['value']) for _, row in df.iterrows()]
 
-@app.post("/fetch-predicted-values")
-def fetch_predicted_values_between_time_period(sensor_data: SensorData):
+@app.post("/fetch-sensor-values")
+def fetch_values_between_time_period(sensor_data: DataRequest):
     start_date = sensor_data.start_date
     end_date = sensor_data.end_date
 
@@ -110,18 +101,81 @@ def fetch_predicted_values_between_time_period(sensor_data: SensorData):
         if start_date > datetime.now():
             start_date = datetime.now()
 
-    data = fetch_data_from_cosmos(organization_id, unit_id, machine_id, sensor_id, start_date, end_date)
+    data = fetch_data_from_cosmos(sensor_data.organization_id, sensor_data.unit_id, sensor_data.machine_id, sensor_data.sensor_id, start_date, end_date)
     
-    return AnomalyDataResponse(
-        organization_id=organization_id,
-        unit_id=unit_id,
-        machine_id=machine_id,
-        sensor_id=sensor_id,
+    return DataResponse(
+        organization_id=sensor_data.organization_id,
+        unit_id=sensor_data.unit_id,
+        machine_id=sensor_data.machine_id,
+        sensor_id=sensor_data.sensor_id,
         data=data
     )
+    
+###############################  
+    
+@app.post("/fetch-sensor-predictions", response_model=DataResponse)
+def get_predictions(request: DataRequest) -> List[TimeSeriesData]:
+    conn = pyodbc.connect(SQL_CONNECTION_STRING)
+    cursor = conn.cursor()
 
-def fetch_predicted_values_betweenn_time_period():
-    pass
+    # Build the query with dynamic parameters
+    query = """
+    SELECT prediction_time, prediction_value
+    FROM sensor_predictions
+    WHERE organization_id = ? AND unit_id = ? AND machine_id = ? AND sensor_id = ?
+    """
+    
+    params = [request.organization_id, request.unit_id, request.machine_id, request.sensor_id]
+
+    if request.start_time and request.end_time:
+        query += " AND prediction_time BETWEEN ? AND ?"
+        params.extend([request.start_time, request.end_time])
+    
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    
+    # Convert rows to TimeSeriesData objects
+    time_series_data = [TimeSeriesData(
+        datetime=row.prediction_time,
+        value=row.prediction_value
+    ) for row in sorted(rows, key=lambda x: x.prediction_time)]
+
+    cursor.close()
+    conn.close()
+
+    return time_series_data
+
+##################################
+
+@app.post("/fetch_combined_data", response_model=DataResponse)
+def fetch_combined_data_endpoint(request: DataRequest):
+    centre_period = datetime.now()
+    first_start_period = first_period_end - timedelta(hours=24)
+    
+    sensor_data.start_date = first_period_start
+    sensor_data.end_date = first_period_end
+    
+    original_values = fetch_values_between_time_period(sensor_data)
+    first_period_data = original_values.data
+    
+    # Fetch the second 24 hours of data
+    second_period_end = centre_period + timedelta(hours=24)
+    
+    prediction_request.start_time = centre_period
+    prediction_request.end_time = second_period_end
+    
+    second_period_data = get_predictions(prediction_request)
+    
+    # Combine the two datasets
+    combined_data = first_period_data + second_period_data
+    
+    return DataResponse(
+        organization_id=sensor_data.organization_id,
+        unit_id=sensor_data.unit_id,
+        machine_id=sensor_data.machine_id,
+        sensor_id=sensor_data.sensor_id,
+        data=combined_data
+    )
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

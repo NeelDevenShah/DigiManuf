@@ -201,7 +201,7 @@ def store_prediction_in_azure_sql(data, periods):
     conn.commit()
 
 # Schedule task for every 2 hours
-async def schedule_api_calls(periods=5):
+async def schedule_api_calls(periods=24):
     while True:
         for org_id, org_info in org_data.items():
             for mach_id, mach_info in org_info["machines"].items():
