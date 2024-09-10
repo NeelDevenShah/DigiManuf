@@ -27,7 +27,7 @@ blob_service_client = BlobServiceClient.from_connection_string(BLOB_CONNECTION_S
 container_client = blob_service_client.get_container_client(BLOB_CONTAINER_NAME)
 
 # Function to fetch data from Cosmos DB
-def fetch_data_from_cosmos(organization_id: str, machine_id: str, sensor_id: str):
+def fetch_data_from_cosmos(organization_id: str, unit_id: str, machine_id: str, sensor_id: str):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
     database = client.get_database_client(DATABASE_NAME)
     container = database.get_container_client(CONTAINER_NAME)
@@ -35,6 +35,7 @@ def fetch_data_from_cosmos(organization_id: str, machine_id: str, sensor_id: str
     # Query all the data from the container
     query = f"""SELECT * FROM c 
     WHERE c.organization_id = '{organization_id}' 
+    AND c.unit_id = '{unit_id}' 
     AND c.machine_id = '{machine_id}' 
     AND c.sensor_id = '{sensor_id}' """
     items = list(container.query_items(query=query, enable_cross_partition_query=True))
@@ -49,17 +50,20 @@ class PredictionInput(BaseModel):
     periods: int  # Number of future periods to predict
     start_timestamp: Optional[str] = None  # Optional start timestamp in ISO format
     organization_id: str
+    unit_id: str
     machine_id: str
     sensor_id: str
 
 class PredictionOutput(BaseModel):
     predictions: List[float]  # List of predicted values
     organization_id: str
+    unit_id: str
     machine_id: str
     sensor_id: str
 
 class TrainingInput(BaseModel):
     organization_id: str
+    unit_id: str
     machine_id: str
     sensor_id: str
     
@@ -80,16 +84,16 @@ def train_model(df):
     return model
 
 # Function to save the model to Azure Blob Storage
-def save_model_to_blob(model, organization_id , machine_id, sensor_id):
+def save_model_to_blob(model, organization_id, unit_id, machine_id, sensor_id):
     model_type = "prediction"
-    model_name = f"{organization_id}_{machine_id}_{sensor_id}_{model_type}.pkl"
+    model_name = f"{organization_id}_{unit_id}_{machine_id}_{sensor_id}_{model_type}.pkl"
     
     # Save model and scaler to a local file
     with open(model_name, "wb") as f:
         joblib.dump(model, f)
     
     # Create a BlobServiceClient
-    blob_client = blob_service_client.get_blob_client(container=BLOB_CONTAINER_NAME, blob=f"{organization_id}/{machine_id}/{sensor_id}/{model_type}.pkl")
+    blob_client = blob_service_client.get_blob_client(container=BLOB_CONTAINER_NAME, blob=f"{organization_id}/{unit_id}/{machine_id}/{sensor_id}/{model_type}.pkl")
     
     # Upload the model file to Blob Storage
     with open(model_name, "rb") as data:
@@ -97,10 +101,10 @@ def save_model_to_blob(model, organization_id , machine_id, sensor_id):
     os.remove(model_name)
 
 # Load model from Azure Blob Storage
-def load_model_from_azure(organization_id, machine_id, sensor_id, model_type):
-    model_name = f"{organization_id}_{machine_id}_{sensor_id}_{model_type}.pkl"
+def load_model_from_azure(organization_id, unit_id, machine_id, sensor_id, model_type):
+    model_name = f"{organization_id}_{unit_id}_{machine_id}_{sensor_id}_{model_type}.pkl"
     
-    blob_client = blob_service_client.get_blob_client(container=BLOB_CONTAINER_NAME, blob=f"{organization_id}/{machine_id}/{sensor_id}/{model_type}.pkl")
+    blob_client = blob_service_client.get_blob_client(container=BLOB_CONTAINER_NAME, blob=f"{organization_id}/{unit_id}/{machine_id}/{sensor_id}/{model_type}.pkl")
     
     # Download the model file from Blob Storage
     with open(model_name, "wb") as download_file:
@@ -119,20 +123,20 @@ def load_model_from_azure(organization_id, machine_id, sensor_id, model_type):
 def train_and_store_model(data: TrainingInput):
 
     # Fetch data from Cosmos DB
-    df = fetch_data_from_cosmos(organization_id = data.organization_id, machine_id = data.machine_id, sensor_id = data.sensor_id)
+    df = fetch_data_from_cosmos(organization_id = data.organization_id, unit_id=data.unit_id, machine_id = data.machine_id, sensor_id = data.sensor_id)
 
     # Train the new model
     model = train_model(df)
 
     # Save the new model to Blob Storage and update the running model
-    save_model_to_blob(model, organization_id = data.organization_id, machine_id = data.machine_id, sensor_id = data.sensor_id)
+    save_model_to_blob(model, organization_id = data.organization_id, unit_id=data.unit_id, machine_id = data.machine_id, sensor_id = data.sensor_id)
     
     return TrainingOutput(code=200, msg="Model trained and saved to the azure blob")
 
 @app.post("/predict_values", response_model=PredictionOutput)
 def predict_values(data: PredictionInput):
     
-    model = load_model_from_azure(data.organization_id, data.machine_id, data.sensor_id, 'prediction')
+    model = load_model_from_azure(data.organization_id, data.unit_id, data.machine_id, data.sensor_id, 'prediction')
 
     # Create a future dataframe with the specified number of periods
     if data.start_timestamp:
@@ -153,7 +157,7 @@ def predict_values(data: PredictionInput):
     # Extract the predicted values (yhat)
     predictions = forecast['yhat'].tolist()
     
-    return PredictionOutput(predictions=predictions, organization_id=data.organization_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
+    return PredictionOutput(predictions=predictions, organization_id=data.organization_id, unit_id=data.unit_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

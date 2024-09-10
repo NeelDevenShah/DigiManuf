@@ -14,6 +14,7 @@ app = FastAPI()
 # CREATE TABLE sensor_predictions (
 #     id INT PRIMARY KEY IDENTITY(1,1),
 #     organization_id VARCHAR(255),
+#     unit_id VARCHAR(255),
 #     machine_id VARCHAR(255),
 #     sensor_id VARCHAR(255),
 #     prediction_time DATETIME, -- Time for which the prediction is made
@@ -25,6 +26,7 @@ app = FastAPI()
 # CREATE TABLE model_training_log (
 #     id SERIAL PRIMARY KEY,
 #     organization_id VARCHAR(255) NOT NULL,
+#     unit_id VARCHAR(255) NOT NULL,
 #     machine_id VARCHAR(255) NOT NULL,
 #     sensor_id VARCHAR(255) NOT NULL,
 #     start_time TIMESTAMP NOT NULL,
@@ -74,25 +76,26 @@ SQL_PASSWORD = "your_password"
 SQL_DRIVER = "{ODBC Driver 17 for SQL Server}"
 
 # Function to log training status to SQL DB
-def log_training_to_sql(organization_id, machine_id, sensor_id, start_time, end_time, status, message, model_type):
+def log_training_to_sql(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type):
     conn_str = f"DRIVER={SQL_DRIVER};SERVER={SQL_SERVER};DATABASE={SQL_DATABASE};UID={SQL_USERNAME};PWD={SQL_PASSWORD}"
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
 
     insert_query = """
-    INSERT INTO training_logs (organization_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
+    INSERT INTO training_logs (organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """
-    cursor.execute(insert_query, (organization_id, machine_id, sensor_id, start_time, end_time, status, message, model_type))
+    cursor.execute(insert_query, (organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type))
     
     conn.commit()
     cursor.close()
     conn.close()
 
 # Function to call the training API and log results
-def call_training_api(organization_id: str, machine_id: str, sensor_id: str):
+def call_training_api(organization_id: str, unit_id:str, machine_id: str, sensor_id: str):
     payload = {
         "organization_id": organization_id,
+        "unit_id": unit_id,
         "machine_id": machine_id,
         "sensor_id": sensor_id
     }
@@ -119,37 +122,40 @@ def call_training_api(organization_id: str, machine_id: str, sensor_id: str):
 
     # Log training details to SQL
     model_type = "prediction"
-    log_training_to_sql(organization_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
+    log_training_to_sql(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
 
 # Function to schedule training every 24 hours for each sensor
 async def training_task():
     while True:
         organizations = ["org_001", "org_002"]  # Example organizations, can be dynamically fetched
         for organization_id in organizations:
-            machines = ["mach_001", "mach_002"]  # Example machines
-            for machine_id in machines:
-                sensors = ["sens_001", "sens_002"]  # Example sensors
-                for sensor_id in sensors:
-                    # Call training API and log results
-                    call_training_api(organization_id, machine_id, sensor_id)
+            units = ["unt_001", "unt_002"]            
+            for unit_id in units:
+                machines = ["mach_001", "mach_002"]  # Example machines
+                for machine_id in machines:
+                    sensors = ["sens_001", "sens_002"]  # Example sensors
+                    for sensor_id in sensors:
+                        # Call training API and log results
+                        call_training_api(organization_id, unit_id, machine_id, sensor_id)
         
         await asyncio.sleep(86400)  # Sleep for 24 hours
 
 # Manual training trigger
 @app.post("/manual_trigger_training")
-async def manual_trigger_training(organization_id: str, machine_id: str, sensor_id: str):
+async def manual_trigger_training(organization_id: str, unit_id:str, machine_id: str, sensor_id: str):
     # Call training API immediately and log the result
-    call_training_api(organization_id, machine_id, sensor_id)
+    call_training_api(organization_id, unit_id, machine_id, sensor_id)
     return {"detail": "Manual training completed"}
 
 ######################
 
 # Function to call API
-async def execute_api_call(organization_id, machine_id, sensor_id, periods, start_timestamp=None):
+async def execute_api_call(organization_id, unit_id, machine_id, sensor_id, periods, start_timestamp=None):
     api_url = PREDICTION_URL
 
     payload = {
         "organization_id": organization_id,
+        "unit_id": unit_id,
         "machine_id": machine_id,
         "sensor_id": sensor_id,
         "periods": periods
@@ -173,6 +179,7 @@ async def execute_api_call(organization_id, machine_id, sensor_id, periods, star
 # Function to store predictions in Azure SQL
 def store_prediction_in_azure_sql(data, periods):
     organization_id = data["organization_id"]
+    unit_id = data["unit_id"]
     machine_id = data["machine_id"]
     sensor_id = data["sensor_id"]
 
@@ -184,9 +191,9 @@ def store_prediction_in_azure_sql(data, periods):
 
         cursor.execute("""
             INSERT INTO sensor_predictions 
-            (organization_id, machine_id, sensor_id, prediction_time, prediction_value, prediction_datetime)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (organization_id, machine_id, sensor_id, prediction_time, prediction, current_time))
+            (organization_id, unit_id, machine_id, sensor_id, prediction_time, prediction_value, prediction_datetime)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (organization_id, unit_id, machine_id, sensor_id, prediction_time, prediction, current_time))
 
     conn.commit()
 
@@ -202,9 +209,9 @@ async def schedule_api_calls(periods=5):
 
 # API endpoint for manual trigger
 @app.post("/manual_trigger")
-async def manual_trigger(organization_id: str, machine_id: str, sensor_id: str, periods: int, start_timestamp: str, background_tasks: BackgroundTasks):
+async def manual_trigger(organization_id: str, unit_id:str, machine_id: str, sensor_id: str, periods: int, start_timestamp: str, background_tasks: BackgroundTasks):
     # Manually trigger API call
-    data = await execute_api_call(organization_id, machine_id, sensor_id, periods, start_timestamp)
+    data = await execute_api_call(organization_id, unit_id, machine_id, sensor_id, periods, start_timestamp)
     return data
 
 # Run API calls in background
