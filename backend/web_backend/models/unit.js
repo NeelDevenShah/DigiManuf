@@ -4,8 +4,14 @@ const unitSchema = new mongoose.Schema({
     machines: [{ 
       type: mongoose.Schema.Types.ObjectId, 
       ref: 'Machine' 
-    }]  // Reference to machines
+    }],  // Reference to machines
+    organization: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'Organization' 
+    }  // Reference to the organization
   });
   
   const Unit = mongoose.model('Unit', unitSchema);
+
+module.exports = Unit;
   

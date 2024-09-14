@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+
 const organizationSchema = new mongoose.Schema({
     name: String,         // Organization name
     address: String,      // Organization address
@@ -8,4 +10,6 @@ const organizationSchema = new mongoose.Schema({
   });
   
   const Organization = mongoose.model('Organization', organizationSchema);
+
+module.exports = Organization;
   

@@ -1,5 +1,6 @@
 var express = require('express');
 var authRoutes = require('./routes/auth.routes');
+var orgRoutes = require('./routes/org.routes');
 const connectDB = require('./config/db.js');
 const cookieParser = require('cookie-parser');
 
@@ -9,8 +10,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 
-
 app.use('/api/auth', authRoutes);
+app.use('/api/org', orgRoutes);
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
