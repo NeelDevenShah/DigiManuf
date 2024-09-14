@@ -1,3 +1,4 @@
 *.glb
 *.pkl
-frontend/DigiManufReact/node_modules/
+.env
+node_modules
