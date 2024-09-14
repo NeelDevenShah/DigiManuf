@@ -1,11 +1,12 @@
 var User = require('../models/user.js');
 var jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs')
+const dotenv = require('dotenv');
+dotenv.config();
 const generateToken = require('../middleware/token.js')
-SECRET_KEY = "This_is_the_secret@auth_key"
+const SECRET_KEY = process.env.SECRET_KEY;
 
 exports.register = async (req, res) => {
-
     try{
         console.log('REQ BODY ON REGISTER CONTROLLER', req.body);
         let user = await req.body;
