@@ -4,9 +4,9 @@ const { getOrg, getMachine, getSensor, getUnit, createMachine, createSensor, cre
 const router = express.Router();
 
 router.get('/organization', getOrg);
-router.get('/sensor/:id', getSensor);
-router.get('/machine/:id', getMachine);
-router.get('/unit/:id', getUnit);
+router.get('/sensor', getSensor);
+router.get('/machine', getMachine);
+router.get('/unit', getUnit);
 router.post('/unit', createUnit);
 router.post('/machine', createMachine);
 router.post('/sensor', createSensor);

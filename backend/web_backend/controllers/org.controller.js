@@ -1,6 +1,7 @@
 var Org = require('../models/organization.js');
 var Sensor = require('../models/sensor.js');
 var Machine = require('../models/machine.js');
+var Unit = require('../models/unit.js');
 
 
 exports.getOrg = async (req, res) => {
@@ -16,8 +17,14 @@ exports.getOrg = async (req, res) => {
 
 exports.getMachine = async (req, res) => {
     try {
-        let machine = await Machine.findById(req.params.id);
-        return res.status(200).json({ success: true, data: machine });
+        if(req.query.id){
+            let machine = await Machine.findById(req.query.id);
+            return res.status(200).json({ success: true, data: machine });
+        }
+        else{
+            let machines = await Machine.find();
+            return res.status(200).json({success:true, data: machines})
+        }
 
     } catch (error) {
         console.log(error);
@@ -28,8 +35,14 @@ exports.getMachine = async (req, res) => {
 
 exports.getSensor = async (req, res) => {
     try {
-        let sensor = await Sensor.findById(req.params.id);
-        return res.status(200).json({ success: true, data: sensor });
+        if(req.query.id){
+            let sensor = await Sensor.findById(req.query.id);
+            return res.status(200).json({ success: true, data: sensor });
+        }
+        else{
+            let sensors = await Sensor.find();
+            return res.status(200).json({ success: true, data: sensors })
+        }
 
     } catch (error) {
         console.log(error);
@@ -39,8 +52,14 @@ exports.getSensor = async (req, res) => {
 
 exports.getUnit = async (req, res) => {
     try {
-        let unit = await Unit.findById(req.params.id);
-        return res.status(200).json({ success: true, data: unit });
+        if(req.query.id){
+            let unit = await Unit.findById(req.query.id);
+            return res.status(200).json({ success: true, data: unit });
+        }
+        else{
+            let units = await Unit.find();
+            return res.status(200).json({ success: true, data: units });
+        }
 
     } catch (error) {
         console.log(error);
