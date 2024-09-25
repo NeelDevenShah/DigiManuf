@@ -12,9 +12,11 @@ interface Sensor {
 
 interface SensorListProps {
     machineId: string;
+    unitId?: string;
+    organizationId?: string;
 }
 
-const SensorList: React.FC<SensorListProps> = ({ machineId }) => {
+const SensorList: React.FC<SensorListProps> = ({ machineId, unitId, organizationId}) => {
     // Fetch sensors from API or state management
     const sensors: Sensor[] = [
         { id: '1', name: 'Sensor 1' },

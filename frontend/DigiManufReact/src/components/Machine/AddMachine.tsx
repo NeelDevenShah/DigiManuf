@@ -6,9 +6,10 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 
 interface AddMachineProps {
     unitId: string;
+    organizationId?: string;
 }
 
-const AddMachine: React.FC<AddMachineProps> = ({ unitId }) => {
+const AddMachine: React.FC<AddMachineProps> = ({ unitId, organizationId }) => {
     const [name, setName] = useState('');
 
     const handleSubmit = (e: React.FormEvent) => {
