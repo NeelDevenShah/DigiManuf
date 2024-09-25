@@ -8,55 +8,103 @@ const dummyData1 = [
     { time: '11:00', value: 500 },
     { time: '11:30', value: 200 },
     { time: '12:00', value: 600 },
-  ];
-  
-  const dummyData2 = [
-    { time: '10:00', value: 100 },
-    { time: '10:30', value: 200 },
-    { time: '11:00', value: 150 },
-    { time: '11:30', value: 250 },
-    { time: '12:00', value: 350 },
-  ];
-  
-  const dummyData3 = [
-    { time: '10:00', value: 400 },
-    { time: '10:30', value: 300 },
-    { time: '11:00', value: 500 },
-    { time: '11:30', value: 200 },
-    { time: '12:00', value: 600 },
-  ];
-  
-  const dummyData4 = [
-    { time: '10:00', value: 100 },
-    { time: '10:30', value: 200 },
-    { time: '11:00', value: 150 },
-    { time: '11:30', value: 250 },
-    { time: '12:00', value: 350 },
-  ];
+];
 
-  const dummyData5 = [
+const dummyData2 = [
+    { time: '10:00', value: 100 },
+    { time: '10:30', value: 200 },
+    { time: '11:00', value: 150 },
+    { time: '11:30', value: 250 },
+    { time: '12:00', value: 350 },
+];
+
+const dummyData3 = [
     { time: '10:00', value: 400 },
     { time: '10:30', value: 300 },
     { time: '11:00', value: 500 },
     { time: '11:30', value: 200 },
     { time: '12:00', value: 600 },
-  ];
+];
+
+const dummyData4 = [
+    { time: '10:00', value: 100 },
+    { time: '10:30', value: 200 },
+    { time: '11:00', value: 150 },
+    { time: '11:30', value: 250 },
+    { time: '12:00', value: 350 },
+];
+
+const dummyData5 = [
+    { time: '10:00', value: 400 },
+    { time: '10:30', value: 300 },
+    { time: '11:00', value: 500 },
+    { time: '11:30', value: 200 },
+    { time: '12:00', value: 600 },
+];
+
+const styles: { [key: string]: React.CSSProperties } = {
+    container: {
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '20px',
+    },
+    card: {
+        backgroundColor: '#fff',
+        padding: '20px',
+        marginBottom: '20px',
+        borderRadius: '10px',
+        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+    },
+    pageTitle: {
+        textAlign: 'center',
+        fontSize: '36px',
+        color: '#333',
+        marginBottom: '20px',
+        fontWeight: 'bold',
+    },
+    link: {
+        display: 'block',
+        textAlign: 'center',
+        fontSize: '18px',
+        color: '#0066cc',
+        textDecoration: 'none',
+        marginBottom: '30px',
+    },
+    sectionTitle: {
+        fontSize: '24px',
+        color: '#222',
+        marginBottom: '15px',
+        textAlign: 'center',
+        fontWeight: 'bold',
+    },
+    graphContainer: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px',
+    },
+};
 
 const SensorPage: React.FC = () => {
     const { sensorId } = useParams<{ sensorId: string }>();
 
-    return (
-        <div>
-            <h1>Sensor {sensorId}</h1>
-            <Link to="/machine/1">Back to Machine</Link>
-            <p>Sensor details go here</p>
+    if (!sensorId) return <div>Sensor not found</div>;
 
-            <h2>Time Series Graphs</h2>
-            <TimeSeriesGraph title="Graph 1: Unit Performance" data={dummyData1} />
-            <TimeSeriesGraph title="Graph 2: Energy Consumption" data={dummyData2} />
-            <TimeSeriesGraph title="Graph 3: Unit Performance" data={dummyData3} />
-            <TimeSeriesGraph title="Graph 4: Energy Consumption" data={dummyData4} />
-            <TimeSeriesGraph title="Graph 5: Unit Performance" data={dummyData5} />
+    return (
+        <div style={styles.container}>
+            <h1 style={styles.pageTitle}>Sensor {sensorId}</h1>
+            <Link to="/machine/1" style={styles.link}>Back to Machine</Link>
+            <p style={styles.card}>Sensor details go here</p>
+
+            <div style={styles.card}>
+                <h2 style={styles.sectionTitle}>Time Series Graphs</h2>
+                <div style={styles.graphContainer}>
+                    <TimeSeriesGraph title="Graph 1: Unit Performance" data={dummyData1} />
+                    <TimeSeriesGraph title="Graph 2: Energy Consumption" data={dummyData2} />
+                    <TimeSeriesGraph title="Graph 3: Unit Performance" data={dummyData3} />
+                    <TimeSeriesGraph title="Graph 4: Energy Consumption" data={dummyData4} />
+                    <TimeSeriesGraph title="Graph 5: Unit Performance" data={dummyData5} />
+                </div>
+            </div>
         </div>
     );
 };
