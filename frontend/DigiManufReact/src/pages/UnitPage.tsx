@@ -70,7 +70,7 @@ const styles: { [key: string]: React.CSSProperties } = {
 };
 
 const UnitPage: React.FC = () => {
-    const { unitId } = useParams<{ unitId: string }>();
+    const { unitId, organizationId } = useParams<{ unitId: string, organizationId: string }>();
 
     if (!unitId) return <div>Unit not found</div>;
 
@@ -82,8 +82,8 @@ const UnitPage: React.FC = () => {
             {/* Machine List Section */}
             <div style={styles.card}>
                 <h2 style={styles.sectionTitle}>Machines</h2>
-                <MachineList unitId={unitId} />
-                <AddMachine unitId={unitId} />
+                <MachineList unitId={unitId} organizationId={organizationId} />
+                <AddMachine unitId={unitId} organizationId={organizationId} />
             </div>
 
             {/* Graph Section */}
@@ -91,10 +91,10 @@ const UnitPage: React.FC = () => {
                 <h2 style={styles.sectionTitle}>Time Series Graphs</h2>
                 <div style={styles.graphContainer}>
                     <div style={styles.graphCard}>
-                        <TimeSeriesGraph title="Graph 1: Unit Performance" data={dummyData1} />
+                        <TimeSeriesGraph title="Graph 1: Unit Performance" data={dummyData1} unitId= {unitId} organizationId= {organizationId}/>
                     </div>
                     <div style={styles.graphCard}>
-                        <TimeSeriesGraph title="Graph 2: Energy Consumption" data={dummyData2} />
+                        <TimeSeriesGraph title="Graph 2: Energy Consumption" data={dummyData2} unitId= {unitId} organizationId= {organizationId}/>
                     </div>
                 </div>
             </div>

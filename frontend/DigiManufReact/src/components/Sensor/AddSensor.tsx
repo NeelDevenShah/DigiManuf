@@ -6,9 +6,11 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 
 interface AddSensorProps {
     machineId: string;
+    unitId?: string;
+    organizationId?: string;
 }
 
-const AddSensor: React.FC<AddSensorProps> = ({ machineId }) => {
+const AddSensor: React.FC<AddSensorProps> = ({ machineId, unitId, organizationId}) => {
     const [name, setName] = useState('');
     const [type, setType] = useState('');
 

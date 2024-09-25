@@ -72,7 +72,7 @@ const styles: { [key: string]: React.CSSProperties } = {
 };
 
 const MachinePage: React.FC = () => {
-    const { machineId } = useParams<{ machineId: string }>();
+    const { machineId, unitId, organizationId } = useParams<{ machineId: string, unitId?: string, organizationId?: string }>();
 
     if (!machineId) return <div>Machine not found</div>;
 
@@ -84,8 +84,8 @@ const MachinePage: React.FC = () => {
             {/* Sensors Section */}
             <div style={styles.card}>
                 <h2 style={styles.sectionTitle}>Sensors</h2>
-                <SensorList machineId={machineId} />
-                <AddSensor machineId={machineId} />
+                <SensorList machineId={machineId} unitId = {unitId} organizationId= {organizationId}/>
+                <AddSensor machineId={machineId} unitId = {unitId} organizationId= {organizationId}/>
             </div>
 
             {/* Graph Section */}
@@ -93,7 +93,7 @@ const MachinePage: React.FC = () => {
                 <h2 style={styles.sectionTitle}>Time Series Graphs</h2>
                 <div style={styles.graphContainer}>
                     <div style={styles.graphCard}>
-                        <TimeSeriesGraph title="Graph 1: Unit Performance" data={dummyData1} />
+                        <TimeSeriesGraph title="Graph 1: Unit Performance" data={dummyData1} unitId = {unitId} organizationId= {organizationId}/>
                     </div>
                     <div style={styles.graphCard}>
                         <TimeSeriesGraph title="Graph 2: Energy Consumption" data={dummyData2} />

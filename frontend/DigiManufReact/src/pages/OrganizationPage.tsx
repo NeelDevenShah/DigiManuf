@@ -85,8 +85,9 @@ const OrganizationPage: React.FC = () => {
 
             {/* Users Section */}
             <div style={styles.card}>
-                <h2 style={styles.sectionTitle}>Users</h2>
+                <h2 style={styles.sectionTitle}></h2>
                 <AddUser />
+                <h2 style={styles.sectionTitle}></h2>
             </div>
 
             {/* Manufacturing Units Section */}

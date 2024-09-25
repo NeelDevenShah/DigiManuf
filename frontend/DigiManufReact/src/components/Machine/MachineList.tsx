@@ -12,9 +12,10 @@ interface Machine {
 
 interface MachineListProps {
     unitId: string;
+    organizationId?: string;
 }
 
-const MachineList: React.FC<MachineListProps> = ({ unitId }) => {
+const MachineList: React.FC<MachineListProps> = ({ unitId, organizationId }) => {
     // Fetch machines from API or state management
     const machines: Machine[] = [
         { id: '1', name: 'Machine 1' },

@@ -25,9 +25,11 @@ const dummyData2 = [
 interface TimeSeriesGraphProps {
   title: string;
   data: { time: string; value: number }[];
+  unitId?: string;
+  organizationId?: string;
 }
 
-const TimeSeriesGraph: React.FC<TimeSeriesGraphProps> = ({ title, data }) => {
+const TimeSeriesGraph: React.FC<TimeSeriesGraphProps> = ({ title, data, unitId, organizationId }) => {
   return (
     // Added Bootstrap card component for a more professional look
     <div className="card shadow-sm mb-4">
@@ -59,19 +61,19 @@ const TimeSeriesGraph: React.FC<TimeSeriesGraphProps> = ({ title, data }) => {
 };
 
 // Example usage of the component
-const App: React.FC = () => {
-  return (
-    <div className="container mt-4">
-      <div className="row">
-        <div className="col-md-6">
-          <TimeSeriesGraph title="Graph 1" data={dummyData1} />
-        </div>
-        <div className="col-md-6">
-          <TimeSeriesGraph title="Graph 2" data={dummyData2} />
-        </div>
-      </div>
-    </div>
-  );
-};
+// const App: React.FC = () => {
+//   return (
+//     <div className="container mt-4">
+//       <div className="row">
+//         <div className="col-md-6">
+//           <TimeSeriesGraph title="Graph 1" data={dummyData1}/>
+//         </div>
+//         <div className="col-md-6">
+//           <TimeSeriesGraph title="Graph 2" data={dummyData2}/>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
 
 export default TimeSeriesGraph;
