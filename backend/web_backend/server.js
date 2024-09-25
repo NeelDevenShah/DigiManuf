@@ -3,12 +3,15 @@ var authRoutes = require('./routes/auth.routes');
 var orgRoutes = require('./routes/org.routes');
 const connectDB = require('./config/db.js');
 const cookieParser = require('cookie-parser');
-
 const app = express();
+const cors = require('cors');
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
+
+app.use(cors(allowedOrigins));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/org', orgRoutes);
@@ -19,8 +22,8 @@ app.get('/', (req, res) => {
 );
 
 
-app.listen(3000, () => {
-    console.log('Server is running on http://localhost:3000');
+app.listen(3001, () => {
+    console.log('Server is running on http://localhost:3001');
     connectDB();
     }
 );

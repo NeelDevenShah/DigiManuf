@@ -9,7 +9,7 @@ const organizationSchema = new mongoose.Schema({
     }]  // Reference to units
   });
   
-  const Organization = mongoose.model('Organization', organizationSchema);
+const Organization = mongoose.model('Organization', organizationSchema);
 
 module.exports = Organization;
   
