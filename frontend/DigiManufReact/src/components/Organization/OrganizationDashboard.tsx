@@ -3,6 +3,17 @@ import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 // Import Bootstrap icons for enhanced UI
 import 'bootstrap-icons/font/bootstrap-icons.css';
+import { useState } from 'react';
+
+const getData = async () => {
+    // Fetch data from the API
+    const [unit, setUnit] = useState([]);
+    const [machine, setMachine] = useState([]);
+    const [sensor, setSensor] = useState([]);
+    const response = await fetch('http://localhost:3001/api/organization');
+    const data = await response.json();
+    console.log('Organization data:', data);
+}
 
 const OrganizationDashboard: React.FC = () => {
     return (
