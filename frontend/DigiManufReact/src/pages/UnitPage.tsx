@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import MachineList from '../components/Machine/MachineList';
 import AddMachine from '../components/Machine/AddMachine';
@@ -71,18 +71,60 @@ const styles: { [key: string]: React.CSSProperties } = {
 
 const UnitPage: React.FC = () => {
     const { unitId, organizationId } = useParams<{ unitId: string, organizationId: string }>();
+    const [name, setName] = useState<string>('');
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
 
-    if (!unitId) return <div>Unit not found</div>;
+    useEffect(() => {
+        const getName = async () => {
+            try {
+                const response = await fetch(`http://localhost:3001/api/org/unit/?id=${unitId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch unit name');
+                }
+
+                const data = await response.json();
+                console.log(data.data.name)
+                setName(data.data.name || 'Unknown Unit'); // Use a default value if name is not found
+                setLoading(false);
+            } catch (err: any) {
+                setError(err.message || 'Something went wrong');
+                setLoading(false);
+            }
+        };
+
+        if (unitId) {
+            getName();
+        }
+    }, [unitId]); // Only re-run if unitId changes
+
+    if (loading) {
+        return <div>Loading...</div>;
+    }
+
+    if (error) {
+        return <div>Error: {error}</div>;
+    }
+
+    if (!unitId || !name) {
+        return <div>Unit not found</div>;
+    }
 
     return (
         <div style={styles.container}>
-            <h1 style={styles.pageTitle}>Unit {unitId}</h1>
+            <h1 style={styles.pageTitle}>Unit: {name}</h1>
             <Link to="/organization" style={styles.link}>Back to Organization</Link>
 
             {/* Machine List Section */}
             <div style={styles.card}>
                 <h2 style={styles.sectionTitle}>Machines</h2>
-                <MachineList unitId={unitId} organizationId={organizationId} />
+                <MachineList unitId={unitId} organizationId={organizationId} unitName={name} />
                 <AddMachine unitId={unitId} organizationId={organizationId} />
             </div>
 
@@ -91,10 +133,10 @@ const UnitPage: React.FC = () => {
                 <h2 style={styles.sectionTitle}>Time Series Graphs</h2>
                 <div style={styles.graphContainer}>
                     <div style={styles.graphCard}>
-                        <TimeSeriesGraph title="Graph 1: Unit Performance" data={dummyData1} unitId= {unitId} organizationId= {organizationId}/>
+                        <TimeSeriesGraph title="Graph 1: Unit Performance" data={dummyData1} unitId={unitId} organizationId={organizationId} />
                     </div>
                     <div style={styles.graphCard}>
-                        <TimeSeriesGraph title="Graph 2: Energy Consumption" data={dummyData2} unitId= {unitId} organizationId= {organizationId}/>
+                        <TimeSeriesGraph title="Graph 2: Energy Consumption" data={dummyData2} unitId={unitId} organizationId={organizationId} />
                     </div>
                 </div>
             </div>

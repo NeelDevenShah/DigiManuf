@@ -13,14 +13,25 @@ interface Machine {
 interface MachineListProps {
     unitId: string;
     organizationId?: string;
+    unitName: string;
 }
 
-const MachineList: React.FC<MachineListProps> = ({ unitId, organizationId }) => {
+const MachineList: React.FC<MachineListProps> = ({ unitId, organizationId, unitName }) => {
     // Fetch machines from API or state management
-    const machines: Machine[] = [
-        { id: '1', name: 'Machine 1' },
-        { id: '2', name: 'Machine 2' },
-    ];
+    const [machines, setMachines] = React.useState<Machine[]>([]);
+
+    const getMachineList = async () => {
+        const response = await fetch(`http://localhost:3001/api/org/machine/?id=${unitId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const data = await response.json();
+        setMachines(data.data);
+    }
+    getMachineList();
 
     return (
         // Added: Card component for a modern, elevated look
@@ -28,7 +39,7 @@ const MachineList: React.FC<MachineListProps> = ({ unitId, organizationId }) => 
             <div className="card-body">
                 <h5 className="card-title mb-3">
                     <i className="bi bi-gear-fill me-2"></i>
-                    Machines in Unit {unitId}
+                    Machines in Unit {unitName}
                 </h5>
                 {/* Enhanced: List group for better structure and styling */}
                 <div className="list-group">

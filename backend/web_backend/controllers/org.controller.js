@@ -18,7 +18,7 @@ exports.getOrg = async (req, res) => {
 exports.getMachine = async (req, res) => {
     try {
         if(req.query.id){
-            let machine = await Machine.findById(req.query.id);
+            let machine = await Machine.find({unit: req.query.id});
             return res.status(200).json({ success: true, data: machine });
         }
         else{

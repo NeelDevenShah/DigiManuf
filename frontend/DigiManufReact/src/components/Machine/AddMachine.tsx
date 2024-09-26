@@ -15,7 +15,19 @@ const AddMachine: React.FC<AddMachineProps> = ({ unitId, organizationId }) => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         // Implement add machine logic here
-        console.log('Add machine:', name, 'to unit:', unitId);
+        const AddMachine = async () => {
+            const response = await fetch('http://localhost:3001/api/org/machine', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name: name, unit:unitId }),
+            });
+
+            const data = await response.json();
+            console.log('Add machine:', data);
+        }
+        AddMachine();
         setName('');
     };
 
