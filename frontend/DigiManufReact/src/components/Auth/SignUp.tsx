@@ -11,8 +11,18 @@ const SignUp: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         // Implement sign up logic here
-        console.log('Sign up with:', email, password);
-        navigate('/');
+        const response = await fetch('http://localhost:3001/api/auth/signup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
+        });
+
+        const data = await response.json();
+        console.log('Sign up response:', data);
+
+        // navigate('/');
     };
 
     return (

@@ -9,9 +9,19 @@ const AddUser: React.FC = () => {
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('');
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async(e: React.FormEvent) => {
         e.preventDefault();
         // Implement add user logic here
+        const response = await fetch('http://localhost:3001/api/auth/signup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password, role }),
+        });
+
+        const data = await response.json();
+        console.log('Sign up response:', data);
         console.log('Add user:', email, password, role);
         setEmail('');
         setPassword('');

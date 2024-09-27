@@ -7,10 +7,20 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 const AddUnit: React.FC = () => {
     const [name, setName] = useState('');
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         // Implement add unit logic here
-        console.log('Add unit:', name);
+        const response = await fetch('http://localhost:3001/api/org/unit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: name }),
+        });
+
+        const data = await response.json();
+
+        console.log('Add unit:', data);
         setName('');
     };
 
@@ -35,6 +45,7 @@ const AddUnit: React.FC = () => {
                                             type="text"
                                             className="form-control"
                                             value={name}
+                                            name="name"
                                             onChange={(e) => setName(e.target.value)}
                                             placeholder="Unit Name"
                                             required

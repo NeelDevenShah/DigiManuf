@@ -17,9 +17,20 @@ const AddSensor: React.FC<AddSensorProps> = ({ machineId, unitId, organizationId
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         // Implement add sensor logic here
-        console.log('Add sensor:', name, type, 'to machine:', machineId);
+        const addSensor = async () => {
+            const response = await fetch('http://localhost:3001/api/org/sensor', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },  
+                body: JSON.stringify({ name: name, machine:machineId, type:type }),
+            });
+
+            const data = await response.json();
+            console.log('Add sensor:', data);
+        }
+        addSensor();
         setName('');
-        setType('');
     };
 
     return (
