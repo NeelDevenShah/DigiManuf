@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import SensorList from '../components/Sensor/SensorList';
 import AddSensor from '../components/Sensor/AddSensor';
 import TimeSeriesGraph from '../components/Utils/TimeSeriesGraph';
+import { useEffect } from 'react';
 
 const dummyData1 = [
     { time: '10:00', value: 400 },
@@ -73,19 +74,41 @@ const styles: { [key: string]: React.CSSProperties } = {
 
 const MachinePage: React.FC = () => {
     const { machineId, unitId, organizationId } = useParams<{ machineId: string, unitId?: string, organizationId?: string }>();
+    const [name, setName] = React.useState<string>('');
+
+    useEffect(() => {
+        const getName = async () => {
+            const response = await fetch(`http://localhost:3001/api/org/machine/?mid=${machineId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            const data = await response.json();
+            // setName(data.data);
+            setName(data.data[0].name);
+
+            // Move the console.log here to avoid infinite re-rendering
+            console.log(data.data);
+        };
+
+        getName();
+    }, [machineId]); // Adding unitId as a dependency ensures the useEffect runs only when it changes
+
 
     if (!machineId) return <div>Machine not found</div>;
 
     return (
         <div style={styles.container}>
-            <h1 style={styles.pageTitle}>Machine {machineId}</h1>
+            <h1 style={styles.pageTitle}>{name}</h1>
             <Link to="/unit/1" style={styles.link}>Back to Unit</Link>
 
             {/* Sensors Section */}
             <div style={styles.card}>
                 <h2 style={styles.sectionTitle}>Sensors</h2>
-                <SensorList machineId={machineId} unitId = {unitId} organizationId= {organizationId}/>
-                <AddSensor machineId={machineId} unitId = {unitId} organizationId= {organizationId}/>
+                <SensorList machineId={machineId} unitId = {unitId} organizationId= {organizationId} machineName={name}/>
+                <AddSensor machineId={machineId} unitId = {unitId} organizationId= {organizationId}  />
             </div>
 
             {/* Graph Section */}

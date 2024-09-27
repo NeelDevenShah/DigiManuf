@@ -17,8 +17,12 @@ exports.getOrg = async (req, res) => {
 
 exports.getMachine = async (req, res) => {
     try {
-        if(req.query.id){
-            let machine = await Machine.find({unit: req.query.id});
+        if(req.query.uid){
+            let machine = await Machine.find({unit: req.query.uid});
+            return res.status(200).json({ success: true, data: machine });
+        }
+        else if(req.query.mid){
+            let machine = await Machine.find({_id: req.query.mid});
             return res.status(200).json({ success: true, data: machine });
         }
         else{
@@ -35,8 +39,12 @@ exports.getMachine = async (req, res) => {
 
 exports.getSensor = async (req, res) => {
     try {
-        if(req.query.id){
-            let sensor = await Sensor.findById(req.query.id);
+        if(req.query.mid){
+            let sensor = await Sensor.find({machine: req.query.mid});
+            return res.status(200).json({ success: true, data: sensor });
+        }
+        else if(req.query.id){
+            let sensor = await Sensor.find({_id: req.query.mid});
             return res.status(200).json({ success: true, data: sensor });
         }
         else{

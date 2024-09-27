@@ -4,6 +4,7 @@ const sensorSchema = new mongoose.Schema({
     name: String,          // e.g., temperature, pressure, etc.
     status: String,        // e.g., active, inactive
     value: Number,         // last known value
+    type: String,
     timestamp: Date,       // when the value was last updated
     machine: { 
       type: mongoose.Schema.Types.ObjectId, 

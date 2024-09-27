@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import TimeSeriesGraph from '../components/Utils/TimeSeriesGraph';
 
@@ -85,15 +85,32 @@ const styles: { [key: string]: React.CSSProperties } = {
 };
 
 const SensorPage: React.FC = () => {
-    const { sensorId } = useParams<{ sensorId: string }>();
+    const { sensorId } = useParams<{ sensorId: string}>();
+    const [sensor, setSensor] = React.useState<any>();
+
+    useEffect(() => {
+        let getName = async()=>{
+            const response = await fetch(`http://localhost:3001/api/org/sensor/?sid=${sensorId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            const data = await response.json();
+            setSensor(data.data[0].name);
+            console.log(sensor)
+        }
+        getName();
+    },[sensorId])
 
     if (!sensorId) return <div>Sensor not found</div>;
 
     return (
         <div style={styles.container}>
-            <h1 style={styles.pageTitle}>Sensor {sensorId}</h1>
-            <Link to="/machine/1" style={styles.link}>Back to Machine</Link>
+            <h1 style={styles.pageTitle}>Sensor {sensor}</h1>
+            <Link to="/machine/" style={styles.link}>Back to Machine</Link>
             <p style={styles.card}>Sensor details go here</p>
+
 
             <div style={styles.card}>
                 <h2 style={styles.sectionTitle}>Time Series Graphs</h2>
