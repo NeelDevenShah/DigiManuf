@@ -7,8 +7,8 @@ from datetime import datetime
 # Azure Cosmos DB configuration
 COSMOS_DB_ENDPOINT = ""
 COSMOS_DB_KEY = ""
-DATABASE_NAME = ""
-CONTAINER_NAME = ""
+DATABASE_NAME = "sensor_data"
+CONTAINER_NAME = "dm-1"
 
 def generate_dummy_data_with_datetime(num_samples=1000, organization_id="001", unit_id="001", machine_id="001", sensor_id="002"):
     # Generate a range of datetime values, for example over a period of a day

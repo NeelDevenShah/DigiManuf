@@ -16,11 +16,11 @@ app = FastAPI()
 # Azure configuration
 COSMOS_DB_ENDPOINT = ""
 COSMOS_DB_KEY = ""
-DATABASE_NAME = ""
-CONTAINER_NAME = ""
+DATABASE_NAME = "sensor_data"
+CONTAINER_NAME = "dm-1"
 
 BLOB_CONNECTION_STRING = ""
-BLOB_CONTAINER_NAME = ""
+BLOB_CONTAINER_NAME = "dmcontainer"
 
 # Initialize BlobServiceClient
 blob_service_client = BlobServiceClient.from_connection_string(BLOB_CONNECTION_STRING)

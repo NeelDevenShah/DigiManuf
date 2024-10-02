@@ -3,8 +3,8 @@ from azure.cosmos import CosmosClient, PartitionKey, exceptions
 # Initialize the Cosmos client
 COSMOS_DB_ENDPOINT = ""
 COSMOS_DB_KEY = ""
-DATABASE_NAME = ""
-CONTAINER_NAME = ""
+DATABASE_NAME = "sensor_data"
+CONTAINER_NAME = "dm-1"
 
 # Create a Cosmos client
 client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
