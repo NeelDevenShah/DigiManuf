@@ -6,37 +6,19 @@ import pyodbc
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 
 # TODO: Testing
+# TODO: Connect DB(sql new one or cosmos or mongo), DB(log of training) and debug
+# TODO: Central Server Start, Instead of the different ones from different places
 
 # FastAPI app
 app = FastAPI()
 
-# TODO: Connect DB(sql new one or cosmos or mongo), DB(log of training) and debug
-
-# TODO: Schema of the sql database for output storage of prediciton
-# CREATE TABLE sensor_predictions (
-#     id INT PRIMARY KEY IDENTITY(1,1),
-#     organization_id VARCHAR(255),
-#     unit_id VARCHAR(255),
-#     machine_id VARCHAR(255),
-#     sensor_id VARCHAR(255),
-#     prediction_time DATETIME, -- Time for which the prediction is made
-#     prediction_value FLOAT,
-#     prediction_datetime DATETIME -- Timestamp when the prediction was made
-# );
-
-# TODO: Schema of the sql database for training log
-# CREATE TABLE model_training_log (
-#     id SERIAL PRIMARY KEY,
-#     organization_id VARCHAR(255) NOT NULL,
-#     unit_id VARCHAR(255) NOT NULL,
-#     machine_id VARCHAR(255) NOT NULL,
-#     sensor_id VARCHAR(255) NOT NULL,
-#     start_time TIMESTAMP NOT NULL,
-#     end_time TIMESTAMP,
-#     status VARCHAR(100) DEFAULT 'PENDING',
-#     message VARCHAR(100),
-#     model_type VARCHAR(30),
-# );
+# CosmosDB config
+COSMOS_DB_ENDPOINT = ""
+COSMOS_DB_KEY = ""
+DATABASE_NAME = "sensor_data"
+CONTAINER_NAME = "dm-1"
+LOG_CONTAINER_NAME = "log-container"
+SENSOR_PRED_CONTAINER_NAME = "sensor-predictions"
 
 PREDICTION_URL = "http://localhost:8000/predict_values"
 TRAINING_URL = "http://0.0.0.0:8000/train_prediction_model"
@@ -63,36 +45,27 @@ org_data = {
     }
 }
 
-# Azure SQL Configuration
-conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=<server_name>;DATABASE=<database_name>;UID=<user>;PWD=<password>')
-cursor = conn.cursor()
-
-#####################
-    # Training Code
-
-# SQL DB connection config for logging training data
-SQL_SERVER = "your_sql_server.database.windows.net"
-SQL_DATABASE = "your_database"
-SQL_USERNAME = "your_username"
-SQL_PASSWORD = "your_password"
-# TODO, check driver with the old code
-SQL_DRIVER = "{ODBC Driver 17 for SQL Server}"
+###################### Training Code
 
 # Function to log training status to SQL DB
-def log_training_to_sql(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type):
-    conn_str = f"DRIVER={SQL_DRIVER};SERVER={SQL_SERVER};DATABASE={SQL_DATABASE};UID={SQL_USERNAME};PWD={SQL_PASSWORD}"
-    conn = pyodbc.connect(conn_str)
-    cursor = conn.cursor()
+def log_training_to_cosmos(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type):
+    client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
+    database = client.get_database_client(DATABASE_NAME)
+    container = database.get_container_client(LOG_CONTAINER_NAME)
 
-    insert_query = """
-    INSERT INTO training_logs (organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """
-    cursor.execute(insert_query, (organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type))
-    
-    conn.commit()
-    cursor.close()
-    conn.close()
+    log_data = {
+        "organization_id": organization_id,
+        "unit_id": unit_id,
+        "machine_id": machine_id,
+        "sensor_id": sensor_id,
+        "start_time": start_time,
+        "end_time": end_time,
+        "status": status,
+        "message": message,
+        "model_type": model_type
+    }
+
+    container.create_item(log_data)
 
 # Function to call the training API and log results
 def call_training_api(organization_id: str, unit_id:str, machine_id: str, sensor_id: str):
@@ -125,7 +98,7 @@ def call_training_api(organization_id: str, unit_id:str, machine_id: str, sensor
 
     # Log training details to SQL
     model_type = "prediction"
-    log_training_to_sql(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
+    log_training_to_cosmos(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
 
 # Function to schedule training every 24 hours for each sensor
 async def training_task():
@@ -172,19 +145,23 @@ async def execute_api_call(organization_id, unit_id, machine_id, sensor_id, peri
         response_data = response.json()
 
         # Handle SQL insertion
-        store_prediction_in_azure_sql(response_data, periods)
+        store_prediction_in_cosmos(response_data, periods)
 
         return response_data
     except Exception as e:
         print(f"Error during API call: {e}")
         raise HTTPException(status_code=500, detail="API call failed")
 
-# Function to store predictions in Azure SQL
-def store_prediction_in_azure_sql(data, periods):
+# Function to store predictions in CosmosDB
+def store_prediction_in_cosmos(data, periods):
     organization_id = data["organization_id"]
     unit_id = data["unit_id"]
     machine_id = data["machine_id"]
     sensor_id = data["sensor_id"]
+
+    client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
+    database = client.get_database_client(DATABASE_NAME)
+    container = database.get_container_client(LOG_CONTAINER_NAME)
 
     # Fetch current timestamp
     current_time = datetime.now()
@@ -192,13 +169,17 @@ def store_prediction_in_azure_sql(data, periods):
     for i, prediction in enumerate(data["predictions"]):
         prediction_time = current_time + timedelta(hours=i + 1)  # Add prediction for each hour
 
-        cursor.execute("""
-            INSERT INTO sensor_predictions 
-            (organization_id, unit_id, machine_id, sensor_id, prediction_time, prediction_value, prediction_datetime)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (organization_id, unit_id, machine_id, sensor_id, prediction_time, prediction, current_time))
+        log_data = {
+            "organization_id": organization_id,
+            "unit_id": unit_id,
+            "machine_id": machine_id,
+            "sensor_id": sensor_id,
+            "prediction_time": prediction_time,
+            "prediction_value": prediction,
+            "prediction_datetime": current_time
+        }
 
-    conn.commit()
+        container.create_item(log_data)
 
 # Schedule task for every 2 hours
 async def schedule_api_calls(periods=24):

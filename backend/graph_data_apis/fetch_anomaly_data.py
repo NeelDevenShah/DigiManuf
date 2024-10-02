@@ -9,48 +9,21 @@ from pydantic import BaseModel
 from typing import List, Optional
 from fastapi.responses import JSONResponsen
 
+from models.organization import Organization
+from models.unit import Unit
+from models.machine import Machine
+from models.sensor import Sensor
+from bson.objectid import ObjectId
+
 # TODO: Testing
 
 # CosmosDB config
 COSMOS_DB_ENDPOINT = ""
 COSMOS_DB_KEY = ""
-DATABASE_NAME = ""
-CONTAINER_NAME = ""
-
-SQL_SERVER = ""
-SQL_DATABASE = ""
-SQL_USERNAME = ""
-SQL_PASSWORD = ""
-# TODO, check driver with the old code
-SQL_DRIVER = "{ODBC Driver 17 for SQL Server}"
-
-# SQL Server connection string
-SQL_CONNECTION_STRING = "DRIVER={ODBC Driver 17 for SQL Server};SERVER=your_server;DATABASE=your_database;UID=your_username;PWD=your_password"
-
-# TODO SQL Schema
-# CREATE TABLE sensor_categories (
-#     id INT PRIMARY KEY IDENTITY(1,1),
-#     organization_id VARCHAR(50) NOT NULL,
-#     unit_id VARCHAR(50) NOT NULL,
-#     machine_id VARCHAR(50) NOT NULL,
-#     sensor_id VARCHAR(50) NOT NULL,
-#     category VARCHAR(50) NOT NULL,
-#     created_at DATETIME DEFAULT GETDATE(),
-#     updated_at DATETIME DEFAULT GETDATE(),
-#     CONSTRAINT UC_OrganizationMachineSensor UNIQUE (organization_id, unit_id, machine_id, sensor_id)
-# );
-
-# TODO SQL Schema
-# CREATE TABLE machine_categories (
-#     id INT PRIMARY KEY IDENTITY(1,1),
-#     organization_id VARCHAR(50) NOT NULL,
-#     unit_id VARCHAR(50) NOT NULL,
-#     machine_id VARCHAR(50) NOT NULL,
-#     category VARCHAR(50) NOT NULL,
-#     created_at DATETIME DEFAULT GETDATE(),
-#     updated_at DATETIME DEFAULT GETDATE(),
-#     CONSTRAINT UC_OrganizationMachineSensor UNIQUE (organization_id, unit_id, machine_id)
-# );
+DATABASE_NAME = "sensor_data"
+CONTAINER_NAME = "dm-1"
+LOG_CONTAINER_NAME = "log-container"
+SENSOR_PRED_CONTAINER_NAME = "sensor-predictions"
 
 ############# For fetching anomaly the data related to the particular sensor
 
@@ -197,35 +170,29 @@ def fetch_anomaly_data_api(request: AnomalyDataRequest):
     
     return data
 
+# TODO: Testing, with the mongoDB
 def fetch_sensor_categories(organization_id: str, unit_id: str = None, machine_id: str = None):
-    conn = pyodbc.connect(SQL_CONNECTION_STRING)
-    cursor = conn.cursor()
+    try:
+        # Step 1: Fetch the sensors based on organization, unit, and machine
+        query = {"organization": ObjectId(organization_id)}
 
-    # Base query
-    query = """
-    SELECT sensor_id, category
-    FROM sensor_categories
-    WHERE organization_id = ?
-    """
-    params = [organization_id]
+        if unit_id:
+            query["unit"] = ObjectId(unit_id)
 
-    # Conditionally add unit_id and machine_id to the query if provided
-    if unit_id:
-        query += " AND unit_id = ?"
-        params.append(unit_id)
+        if machine_id:
+            query["machine"] = ObjectId(machine_id)
 
-    if machine_id:
-        query += " AND machine_id = ?"
-        params.append(machine_id)
+        # Step 2: Fetch the sensors based on the conditions
+        sensors = Sensor.find(query)
 
-    # Execute the query
-    cursor.execute(query, params)
-    categories = {row.sensor_id: row.category for row in cursor.fetchall()}
+        # Step 3: Create a dictionary of sensor IDs and categories
+        categories = {str(sensor._id): sensor.type for sensor in sensors}
 
-    cursor.close()
-    conn.close()
+        return categories
 
-    return categories
+    except Exception as e:
+        print(f"Error: {e}")
+        return {}
 
 class SensorCategoryDataResponse(BaseModel):
     organization_id: str
@@ -308,40 +275,33 @@ def fetch_anomaly_data_for_sensors_by_all_category(organization_id: str, unit_id
 
 ################## For fetching anomaly data related to the particular sensor categories
 
+# TODO: Testing, with the mongoDB
 def fetch_sensor_ids_by_categories(organization_id: str, sensor_categories: list, unit_id: str = None, machine_id: str = None):
-    conn = pyodbc.connect(SQL_CONNECTION_STRING)
-    cursor = conn.cursor()
-    
-    # Base query
-    query = """
-    SELECT sensor_id, category
-    FROM sensor_categories
-    WHERE organization_id = ?
-    """
-    params = [organization_id]
+    try:
+        # Step 1: Build the query with the organization ID and sensor categories
+        query = {
+            "organization": ObjectId(organization_id),
+            "type": {"$in": sensor_categories}  # Matching the categories
+        }
 
-    # Conditionally add unit_id and machine_id to the query if provided
-    if unit_id:
-        query += " AND unit_id = ?"
-        params.append(unit_id)
+        # Step 2: Add unit and machine conditions if provided
+        if unit_id:
+            query["unit"] = ObjectId(unit_id)
 
-    if machine_id:
-        query += " AND machine_id = ?"
-        params.append(machine_id)
+        if machine_id:
+            query["machine"] = ObjectId(machine_id)
 
-    # Add the sensor categories with placeholders
-    placeholders = ','.join('?' for _ in sensor_categories)
-    query += f" AND category IN ({placeholders})"
-    params.extend(sensor_categories)
+        # Step 3: Query MongoDB to fetch the sensors that match the conditions
+        sensors = Sensor.find(query)
 
-    # Execute the query with dynamic parameters
-    cursor.execute(query, params)
-    sensor_data = {row.sensor_id: row.category for row in cursor.fetchall()}
+        # Step 4: Create a dictionary of sensor IDs and their categories
+        sensor_data = {str(sensor._id): sensor.type for sensor in sensors}
 
-    cursor.close()
-    conn.close()
+        return sensor_data
 
-    return sensor_data
+    except Exception as e:
+        print(f"Error: {e}")
+        return {}
 
 class SensorCategoriesRequest(BaseModel):
     organization_id: str

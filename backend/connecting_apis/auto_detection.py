@@ -6,6 +6,8 @@ from azure.cosmos import CosmosClient
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 
 # TODO: Testing
+# TODO: Connect DB(auth one) and DB(timedate cosmos), DB (log of training) and debug
+# TODO: Central Server Start, Instead of the different ones from different places
 
 # FastAPI app
 app = FastAPI()
@@ -13,56 +15,36 @@ app = FastAPI()
 # CosmosDB config
 COSMOS_DB_ENDPOINT = ""
 COSMOS_DB_KEY = ""
-DATABASE_NAME = ""
-CONTAINER_NAME = ""
+DATABASE_NAME = "sensor_data"
+CONTAINER_NAME = "dm-1"
+LOG_CONTAINER_NAME = "log-container"
 
-# TODO: Connect DB(auth one) and DB(timedate cosmos), DB (log of training) and debug
-
-# TODO: Schema of the sql database for training log
-# CREATE TABLE model_training_log (
-#     id SERIAL PRIMARY KEY,
-#     organization_id VARCHAR(255) NOT NULL,
-#     machine_id VARCHAR(255) NOT NULL,
-#     unit_id VARCHAR(255) NOT NULL,
-#     sensor_id VARCHAR(255) NOT NULL,
-#     start_time TIMESTAMP NOT NULL,
-#     end_time TIMESTAMP,
-#     status VARCHAR(100) DEFAULT 'PENDING',
-#     message VARCHAR(100),
-#     model_type VARCHAR(30),
-# );
-
-# The value of the anomaly is itself stored in the azure cosmos database, by increasing the one key value pair.
+# INFO: The value of the anomaly is itself stored in the azure cosmos database, by increasing the one key value pair.
 
 ANOMALY_URL = "http://0.0.0.0:8000/predict_anomaly"
 TRAINING_URL = "http://0.0.0.0:8000/train_anomaly_model"
 
-#####################
-    # Training Code
+###################### Training Code
 
-# SQL DB connection config for logging training data
-SQL_SERVER = "your_sql_server.database.windows.net"
-SQL_DATABASE = "your_database"
-SQL_USERNAME = "your_username"
-SQL_PASSWORD = "your_password"
-# TODO, check driver with the old code
-SQL_DRIVER = "{ODBC Driver 17 for SQL Server}"
+# Function to log training status to CosmosDB
+def log_training_to_cosmos(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type):
+    client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
+    database = client.get_database_client(DATABASE_NAME)
+    container = database.get_container_client(LOG_CONTAINER_NAME)
 
-# Function to log training status to SQL DB
-def log_training_to_sql(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type):
-    conn_str = f"DRIVER={SQL_DRIVER};SERVER={SQL_SERVER};DATABASE={SQL_DATABASE};UID={SQL_USERNAME};PWD={SQL_PASSWORD}"
-    conn = pyodbc.connect(conn_str)
-    cursor = conn.cursor()
+    log_data = {
+        "organization_id": organization_id,
+        "unit_id": unit_id,
+        "machine_id": machine_id,
+        "sensor_id": sensor_id,
+        "start_time": start_time,
+        "end_time": end_time,
+        "status": status,
+        "message": message,
+        "model_type": model_type
+    }
 
-    insert_query = """
-    INSERT INTO training_logs (organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """
-    cursor.execute(insert_query, (organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type))
-    
-    conn.commit()
-    cursor.close()
-    conn.close()
+    container.create_item(log_data)
 
 # Function to call the training API and log results
 def call_training_api(organization_id: str, machine_id: str, sensor_id: str):
@@ -95,7 +77,7 @@ def call_training_api(organization_id: str, machine_id: str, sensor_id: str):
 
     # Log training details to SQL
     model_type = "anomaly"
-    log_training_to_sql(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
+    log_training_to_cosmos(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
 
 # Function to schedule training every 24 hours for each sensor
 async def training_task():
