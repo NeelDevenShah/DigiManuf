@@ -125,6 +125,7 @@ const UnitPage: React.FC = () => {
             <div style={styles.card}>
                 <h2 style={styles.sectionTitle}>Machines</h2>
                 <MachineList unitId={unitId} organizationId={organizationId} unitName={name} />
+                <hr/>
                 <AddMachine unitId={unitId} organizationId={organizationId} />
             </div>
 
