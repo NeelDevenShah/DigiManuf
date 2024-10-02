@@ -10,38 +10,17 @@ from typing import List, Optional
 from fastapi.responses import JSONResponsen
 
 # TODO: Testing
+# TODO: Central Server Start, Instead of the different ones from different places
 
 # CosmosDB config
 COSMOS_DB_ENDPOINT = ""
 COSMOS_DB_KEY = ""
-DATABASE_NAME = ""
-CONTAINER_NAME = ""
-
-SQL_SERVER = ""
-SQL_DATABASE = ""
-SQL_USERNAME = ""
-SQL_PASSWORD = ""
-# TODO, check driver with the old code
-SQL_DRIVER = "{ODBC Driver 17 for SQL Server}"
-
-# SQL Server connection string
-SQL_CONNECTION_STRING = "DRIVER={ODBC Driver 17 for SQL Server};SERVER=your_server;DATABASE=your_database;UID=your_username;PWD=your_password"
+DATABASE_NAME = "sensor_data"
+CONTAINER_NAME = "dm-1"
+LOG_CONTAINER_NAME = "log-container"
+SENSOR_PRED_CONTAINER_NAME = "sensor-predictions"
 
 app = FastAPI()
-
-# TODO: Schema of the sql database for output storage of prediciton
-# CREATE TABLE sensor_predictions (
-#     id INT PRIMARY KEY IDENTITY(1,1),
-#     organization_id VARCHAR(255),
-#     unit_id VARCHAR(255),
-#     machine_id VARCHAR(255),
-#     sensor_id VARCHAR(255),
-#     prediction_time DATETIME, -- Time for which the prediction is made
-#     prediction_value FLOAT,
-#     prediction_datetime DATETIME -- Timestamp when the prediction was made
-# );
-
-# ################################
 
 class TimeSeriesData(BaseModel):
     datetime: str
@@ -115,33 +94,25 @@ def fetch_values_between_time_period(sensor_data: DataRequest):
     
 @app.post("/fetch-sensor-predictions", response_model=DataResponse)
 def get_predictions(request: DataRequest) -> List[TimeSeriesData]:
-    conn = pyodbc.connect(SQL_CONNECTION_STRING)
-    cursor = conn.cursor()
-
-    # Build the query with dynamic parameters
-    query = """
-    SELECT prediction_time, prediction_value
-    FROM sensor_predictions
-    WHERE organization_id = ? AND unit_id = ? AND machine_id = ? AND sensor_id = ?
-    """
+    client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
+    database = client.get_database_client(DATABASE_NAME)
+    container = database.get_container_client(SENSOR_PRED_CONTAINER_NAME)
     
-    params = [request.organization_id, request.unit_id, request.machine_id, request.sensor_id]
-
+    query = f"""SELECT c.prediction_time, c.prediction_value FROM c 
+    WHERE c.organization_id = '{request.organization_id}' 
+    AND c.unit_id = '{request.unit_id}' 
+    AND c.machine_id = '{request.machine_id}' 
+    AND c.sensor_id = '{request.sensor_id}'"""
+    
     if request.start_time and request.end_time:
-        query += " AND prediction_time BETWEEN ? AND ?"
-        params.extend([request.start_time, request.end_time])
+        query += f" AND c.prediction_time BETWEEN '{request.start_time.isoformat()}' AND '{request.end_time.isoformat()}'"
     
-    cursor.execute(query, params)
-    rows = cursor.fetchall()
+    items = list(container.query_items(query=query, enable_cross_partition_query=True))
     
-    # Convert rows to TimeSeriesData objects
     time_series_data = [TimeSeriesData(
-        datetime=row.prediction_time,
-        value=row.prediction_value
-    ) for row in sorted(rows, key=lambda x: x.prediction_time)]
-
-    cursor.close()
-    conn.close()
+        datetime=row['prediction_time'].strftime('%Y-%m-%d %H:%M:%S'),
+        value=row['prediction_value']
+    ) for row in sorted(items, key=lambda x: x['prediction_time'])]
 
     return time_series_data
 
