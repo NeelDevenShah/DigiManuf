@@ -125,5 +125,3 @@ DigiManuf incorporates advanced machine learning models for:
 This project is licensed under the GPLv3 License - see the LICENSE file for details.
 
 Feel free to give any suggestions or recommendations, regarding our approach!
-
-This README provides an overview and setup instructions for DigiManuf. The system was designed with scalability, real-time monitoring, and intelligent decision-making in mind, making it a comprehensive solution for modern distributed manufacturing.
