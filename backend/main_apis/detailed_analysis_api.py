@@ -9,6 +9,7 @@ from azure.cosmos import CosmosClient
 from azure.storage.blob import BlobServiceClient
 import joblib
 
+# FOR FUTURE PLAN, CURRENTLY THIS FILE IS NOT IN WORKING
 # TODO Debugging and editing
 
 app = FastAPI()

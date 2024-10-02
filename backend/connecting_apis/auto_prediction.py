@@ -20,8 +20,8 @@ CONTAINER_NAME = "dm-1"
 LOG_CONTAINER_NAME = "log-container"
 SENSOR_PRED_CONTAINER_NAME = "sensor-predictions"
 
-PREDICTION_URL = "http://localhost:8000/predict_values"
-TRAINING_URL = "http://0.0.0.0:8000/train_prediction_model"
+PREDICTION_URL = "http://localhost:8001/predict_values"
+TRAINING_URL = "http://0.0.0.0:8001/train_prediction_model"
 
 
 # Sample dictionary of organizations, machines, sensors
