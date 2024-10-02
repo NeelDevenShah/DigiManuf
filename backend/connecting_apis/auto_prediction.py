@@ -31,7 +31,6 @@ sensors = ["sens_001"]  # Example sensors
 
 ###################### Training Code
 
-# Function to log training status to SQL DB
 def log_training_to_cosmos(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
     database = client.get_database_client(DATABASE_NAME)
@@ -83,7 +82,6 @@ def call_training_api(organization_id: str, unit_id:str, machine_id: str, sensor
 
     end_time = datetime.now()
 
-    # Log training details to SQL
     model_type = "prediction"
     log_training_to_cosmos(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
 
@@ -126,12 +124,12 @@ async def execute_api_call(organization_id, unit_id, machine_id, sensor_id, peri
         response = requests.post(api_url, json=payload)
         response_data = response.json()
 
-        # Handle SQL insertion
         store_prediction_in_cosmos(response_data, periods)
 
         return response_data
     except Exception as e:
-        print(f"Error during API call: {e}")
+        # print(f"Error during API call: {e}") # As 'NoneType' object is not subscriptable is not error, it is comming as we are returning the null from the API when there is not model related to it
+        return
 
 # Function to store predictions in CosmosDB
 def store_prediction_in_cosmos(data, periods):

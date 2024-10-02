@@ -30,22 +30,25 @@ container_client = blob_service_client.get_container_client(BLOB_CONTAINER_NAME)
 
 # Function to fetch data from Cosmos DB
 def fetch_data_from_cosmos(organization_id: str, unit_id: str, machine_id: str, sensor_id: str):
-    client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
-    database = client.get_database_client(DATABASE_NAME)
-    container = database.get_container_client(CONTAINER_NAME)
+    try:
+        client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
+        database = client.get_database_client(DATABASE_NAME)
+        container = database.get_container_client(CONTAINER_NAME)
 
-    # Query all the data from the container
-    query = f"""SELECT * FROM c 
-    WHERE c.organization_id = '{organization_id}' 
-    AND c.unit_id = '{unit_id}' 
-    AND c.machine_id = '{machine_id}' 
-    AND c.sensor_id = '{sensor_id}' """
-    items = list(container.query_items(query=query, enable_cross_partition_query=True))
+        # Query all the data from the container
+        query = f"""SELECT * FROM c 
+        WHERE c.organization_id = '{organization_id}' 
+        AND c.unit_id = '{unit_id}' 
+        AND c.machine_id = '{machine_id}' 
+        AND c.sensor_id = '{sensor_id}' """
+        items = list(container.query_items(query=query, enable_cross_partition_query=True))
 
-    # Convert to DataFrame
-    df = pd.DataFrame(items)
-    print(f"fetched {len(df)} data from the cosmos related to the {organization_id}, {machine_id}, {sensor_id}")
-    return df
+        # Convert to DataFrame
+        df = pd.DataFrame(items)
+        print(f"fetched {len(df)} data from the cosmos related to the {organization_id}, {machine_id}, {sensor_id}")
+        return df
+    except:
+        return pd.Dataframe()
 
 # Function to train the Isolation Forest model
 def train_model(df):
@@ -134,50 +137,55 @@ class TrainingOutput(BaseModel):
     msg: str
     
 # API to trigger training and replace the running model
-@app.post("/train_anomaly_model", response_model=TrainingOutput)
+@app.post("/train_anomaly_model")
 def train_and_store_model(data: TrainingInput):
 
     # Fetch data from Cosmos DB
     df = fetch_data_from_cosmos(organization_id=data.organization_id, unit_id=data.unit_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
 
-    # Train the new model
-    model, scaler = train_model(df)
+    if not df.empty:
+        model, scaler = train_model(df)
 
-    # Save the new model to Blob Storage and update the running model
-    save_model_to_blob(model, model_type="anomaly", organization_id=data.organization_id, unit_id=data.unit_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
+        save_model_to_blob(model, model_type="anomaly", organization_id=data.organization_id, unit_id=data.unit_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
+        
+        save_model_to_blob(scaler, model_type="scaler", organization_id=data.organization_id, unit_id=data.unit_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
+        
+        return TrainingOutput(code=200, msg="Model trained and saved to the azure blob")
     
-    save_model_to_blob(scaler, model_type="scaler", organization_id=data.organization_id, unit_id=data.unit_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
-    
-    return TrainingOutput(code=200, msg="Model trained and saved to the azure blob")
+    return
 
-@app.post("/predict_anomaly", response_model=AnomalyDetectionOutput)
+@app.post("/predict_anomaly")
 def predict_anomaly(data: AnomalyDetectionInput):
+    try:
+        model = load_model_from_azure(data.organization_id, data.unit_id, data.machine_id, data.sensor_id, 'anomaly')
+        scaler = load_model_from_azure(data.organization_id, data.unit_id, data.machine_id, data.sensor_id, 'scaler')
+        
+        # Convert input data to numpy array
+        instance = np.array([
+            data.temperature, 
+            data.minute, 
+            data.hour,
+            data.day,
+            data.month, 
+            data.year, 
+            data.day_of_week, 
+            data.is_weekend,
+            data.rolling_mean_temp, 
+            data.rolling_std_temp, 
+            data.temp_lag_1s
+        ])
+        
+        # Scale input data
+        instance_scaled = scaler.transform(instance.reshape(1, -1))
+        
+        # Predict using Isolation Forest
+        prediction = model.predict(instance_scaled)
+        
+        return AnomalyDetectionOutput(is_anomaly=(prediction[0] == -1), organization_id=data.organization_id, unit_id=data.unit_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
     
-    model = load_model_from_azure(data.organization_id, data.unit_id, data.machine_id, data.sensor_id, 'anomaly')
-    scaler = load_model_from_azure(data.organization_id, data.unit_id, data.machine_id, data.sensor_id, 'scaler')
-    
-    # Convert input data to numpy array
-    instance = np.array([
-        data.temperature, 
-        data.minute, 
-        data.hour,
-        data.day,
-        data.month, 
-        data.year, 
-        data.day_of_week, 
-        data.is_weekend,
-        data.rolling_mean_temp, 
-        data.rolling_std_temp, 
-        data.temp_lag_1s
-    ])
-    
-    # Scale input data
-    instance_scaled = scaler.transform(instance.reshape(1, -1))
-    
-    # Predict using Isolation Forest
-    prediction = model.predict(instance_scaled)
-    
-    return AnomalyDetectionOutput(is_anomaly=(prediction[0] == -1), organization_id=data.organization_id, unit_id=data.unit_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
+    except:
+        train_and_store_model(TrainingInput(organization_id=data.organization_id, unit_id=data.unit_id, machine_id=data.machine_id, sensor_id=data.sensor_id))
+        return
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

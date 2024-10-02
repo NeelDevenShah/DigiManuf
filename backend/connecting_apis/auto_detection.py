@@ -84,7 +84,6 @@ def call_training_api(organization_id: str, unit_id: str, machine_id: str, senso
 
     end_time = datetime.now()
 
-    # Log training details to SQL
     model_type = "anomaly"
     log_training_to_cosmos(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
 
@@ -133,33 +132,37 @@ def fetch_data_from_cosmos(organization_id: str, unit_id: str, machine_id: str, 
 
 # Function to call anomaly detection API
 def call_anomaly_api(data):
-    api_url = ANOMALY_URL
-    
-    payload = {
-        "organization_id": data["organization_id"],
-        "unit_id": data["unit_id"],
-        "machine_id": data["machine_id"],
-        "sensor_id": data["sensor_id"],
-        "datetime": data["datetime"],
-        "temperature": data["temperature"],
-        "second": data["second"],
-        "minute": data["minute"],
-        "hour": data["hour"],
-        "day": data["day"],
-        "month": data["month"],
-        "year": data["year"],
-        "day_of_week": data["day_of_week"],
-        "is_weekend": data["is_weekend"],
-        "rolling_mean_temp": data["rolling_mean_temp"],
-        "rolling_std_temp": data["rolling_std_temp"],
-        "temp_lag_1s": data["temp_lag_1s"]
-    }
+    try:
+        api_url = ANOMALY_URL
+        
+        payload = {
+            "organization_id": data["organization_id"],
+            "unit_id": data["unit_id"],
+            "machine_id": data["machine_id"],
+            "sensor_id": data["sensor_id"],
+            "datetime": data["datetime"],
+            "temperature": data["temperature"],
+            "second": data["second"],
+            "minute": data["minute"],
+            "hour": data["hour"],
+            "day": data["day"],
+            "month": data["month"],
+            "year": data["year"],
+            "day_of_week": data["day_of_week"],
+            "is_weekend": data["is_weekend"],
+            "rolling_mean_temp": data["rolling_mean_temp"],
+            "rolling_std_temp": data["rolling_std_temp"],
+            "temp_lag_1s": data["temp_lag_1s"]
+        }
 
-    response = requests.post(api_url, json=payload)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        print("Error: Anomaly API call failed")
+        response = requests.post(api_url, json=payload)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print("Error: Anomaly API call failed")
+    except:
+        # print(f"Error during API call: {e}") # As 'NoneType' object is not subscriptable is not error, it is comming as we are returning the null from the API when there is not model related to it
+        return
 
 # Function to update data in CosmosDB with anomaly prediction
 def update_cosmos_with_anomaly_prediction(data, is_anomaly):
