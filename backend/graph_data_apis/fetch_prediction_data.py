@@ -2,7 +2,7 @@ from azure.cosmos import CosmosClient
 import pandas as pd
 from datetime import datetime, timedelta
 import pandas as pd
-import pyodbc
+from azure.cosmos import CosmosClient
 import uvicor
 from fastapi import FastAPI, Query
 from pydantic import BaseModel

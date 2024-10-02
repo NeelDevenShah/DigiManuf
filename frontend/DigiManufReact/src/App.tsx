@@ -13,6 +13,8 @@ function App() {
         <AuthProvider>
             <Router>
                 <Routes>
+                    {/* The code does not have the organization Id which is required for the entire setup, And here in argument we have to pass all the ids hierarchically to all the components */}
+                    {/* path="/machine/:machineId/unit/:unitId/organization/:organizationId", which means the machine page with parameters machineId, unitId, organizationId */}
                     <Route path="/" element={<LoginPage />} />
                     <Route path="/signup" element={<SignUpPage />} />
                     <Route path="/organization" element={<OrganizationPage />} />

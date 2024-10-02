@@ -24,6 +24,12 @@ LOG_CONTAINER_NAME = "log-container"
 ANOMALY_URL = "http://0.0.0.0:8000/predict_anomaly"
 TRAINING_URL = "http://0.0.0.0:8000/train_anomaly_model"
 
+# TODO: Make dynamic as per the data from MongoDB
+organizations = ["org_001"]  # You can modify or dynamically fetch organizations
+units = ["unt_001"]  # You can modify or dynamically fetch organizations
+machines = ["mach_001"]  # Example machines
+sensors = ["sens_001"]  # Example sensors
+
 ###################### Training Code
 
 # Function to log training status to CosmosDB
@@ -31,14 +37,17 @@ def log_training_to_cosmos(organization_id, unit_id, machine_id, sensor_id, star
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
     database = client.get_database_client(DATABASE_NAME)
     container = database.get_container_client(LOG_CONTAINER_NAME)
-
+    
+    datetime_obj = datetime.now()
+    formatted_datetime = datetime_obj.strftime('%Y_%m_%dT%H_%M_%S')
     log_data = {
+        "id": f"{organization_id}_{unit_id}_{machine_id}_{sensor_id}_date_{formatted_datetime}",
         "organization_id": organization_id,
         "unit_id": unit_id,
         "machine_id": machine_id,
         "sensor_id": sensor_id,
-        "start_time": start_time,
-        "end_time": end_time,
+        "start_time": start_time.isoformat(),
+        "end_time": end_time.isoformat(),
         "status": status,
         "message": message,
         "model_type": model_type
@@ -47,7 +56,7 @@ def log_training_to_cosmos(organization_id, unit_id, machine_id, sensor_id, star
     container.create_item(log_data)
 
 # Function to call the training API and log results
-def call_training_api(organization_id: str, machine_id: str, sensor_id: str):
+def call_training_api(organization_id: str, unit_id: str, machine_id: str, sensor_id: str):
     payload = {
         "organization_id": organization_id,
         "unit_id": unit_id,
@@ -82,14 +91,11 @@ def call_training_api(organization_id: str, machine_id: str, sensor_id: str):
 # Function to schedule training every 24 hours for each sensor
 async def training_task():
     while True:
-        organizations = ["org_001", "org_002"]  # Example organizations, can be dynamically fetched
         for organization_id in organizations:
-            machines = ["mach_001", "mach_002"]  # Example machines
-            for machine_id in machines:
-                sensors = ["sens_001", "sens_002"]  # Example sensors
-                for sensor_id in sensors:
-                    # Call training API and log results
-                    call_training_api(organization_id, unit_id, machine_id, sensor_id)
+            for unit_id in units:
+                for machine_id in machines:
+                    for sensor_id in sensors:
+                        call_training_api(organization_id, unit_id, machine_id, sensor_id)
         
         await asyncio.sleep(86400)  # Sleep for 24 hours
 
@@ -103,7 +109,7 @@ async def manual_trigger_training(organization_id: str, unit_id: str, machine_id
 ######################
 
 # Function to fetch data from CosmosDB (last 10 minutes)
-def fetch_data_from_cosmos(organization_id: str, unit_id: str, achine_id: str, sensor_id: str):
+def fetch_data_from_cosmos(organization_id: str, unit_id: str, machine_id: str, sensor_id: str):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
     database = client.get_database_client(DATABASE_NAME)
     container = database.get_container_client(CONTAINER_NAME)
@@ -153,7 +159,7 @@ def call_anomaly_api(data):
     if response.status_code == 200:
         return response.json()
     else:
-        raise HTTPException(status_code=500, detail="Anomaly API call failed")
+        print("Error: Anomaly API call failed")
 
 # Function to update data in CosmosDB with anomaly prediction
 def update_cosmos_with_anomaly_prediction(data, is_anomaly):
@@ -174,27 +180,17 @@ def process_anomaly_detection(df):
         anomaly_response = call_anomaly_api(row)
         is_anomaly = anomaly_response.get("is_anomaly", False)
 
-        # Update Cosmos DB with the anomaly prediction
         update_cosmos_with_anomaly_prediction(row.to_dict(), is_anomaly)
 
 # Scheduled task to check for anomalies every 5 minutes
 async def anomaly_detection_task():
     while True:
-        # TODO: Dynamic data from the Database different then that of timeseries database, Second one from where auth is controlled 
-        
-        organizations = ["org_001", "org_002"]  # You can modify or dynamically fetch organizations
         for organization_id in organizations:
-            units = ["unt_001", "unt_002"]  # You can modify or dynamically fetch organizations
             for unit_id in units:
-                # Iterate over machines and sensors (similar to org_data in previous examples)
-                machines = ["mach_001", "mach_002"]  # Example machines
                 for machine_id in machines:
-                    sensors = ["sens_001", "sens_002"]  # Example sensors
                     for sensor_id in sensors:
-                        # Fetch data from CosmosDB for each sensor
                         df = fetch_data_from_cosmos(organization_id, unit_id, machine_id, sensor_id)
                         if not df.empty:
-                            # Process anomaly detection and update DB
                             process_anomaly_detection(df)
         await asyncio.sleep(300)  # Run every 5 minutes
 
@@ -202,11 +198,9 @@ async def anomaly_detection_task():
 @app.post("/manual_trigger_anomaly")
 async def manual_trigger_anomaly(organization_id: str, unit_id: str, machine_id: str, sensor_id: str, background_tasks: BackgroundTasks):
     df = fetch_data_from_cosmos(organization_id, unit_id, machine_id, sensor_id)
-    if df.empty:
-        raise HTTPException(status_code=404, detail="No data found for the given parameters")
-    
-    # Process anomaly detection synchronously (wait for output)
-    process_anomaly_detection(df)
+
+    if not df.empty:
+        process_anomaly_detection(df)
     return {"detail": "Manual anomaly detection completed"}
 
 # Background task startup

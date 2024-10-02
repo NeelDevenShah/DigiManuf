@@ -2,12 +2,12 @@ from azure.cosmos import CosmosClient
 import pandas as pd
 from datetime import datetime, timedelta
 import pandas as pd
-import pyodbc
 import uvicor
 from fastapi import FastAPI, Query
 from pydantic import BaseModel
 from typing import List, Optional
 from fastapi.responses import JSONResponsen
+from azure.cosmos import CosmosClient
 
 from models.organization import Organization
 from models.unit import Unit
