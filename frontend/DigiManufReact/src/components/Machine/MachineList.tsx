@@ -60,10 +60,6 @@ const MachineList: React.FC<MachineListProps> = ({ unitId, organizationId, unitN
                         </Link>
                     ))}
                 </div>
-                <Link to={`/unit/${unitId}/add-machine`} className="btn btn-primary mt-3 w-100">
-                    <i className="bi bi-plus-circle me-2"></i>
-                    Add New Machine
-                </Link>
             </div>
             <div className="card-footer text-muted">
                 <small>Total Machines: {machines.length}</small>

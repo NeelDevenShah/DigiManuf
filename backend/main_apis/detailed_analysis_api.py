@@ -9,6 +9,7 @@ from azure.cosmos import CosmosClient
 from azure.storage.blob import BlobServiceClient
 import joblib
 
+# FOR FUTURE PLAN, CURRENTLY THIS FILE IS NOT IN WORKING
 # TODO Debugging and editing
 
 app = FastAPI()
@@ -16,11 +17,11 @@ app = FastAPI()
 # Azure configuration
 COSMOS_DB_ENDPOINT = ""
 COSMOS_DB_KEY = ""
-DATABASE_NAME = ""
-CONTAINER_NAME = ""
+DATABASE_NAME = "sensor_data"
+CONTAINER_NAME = "dm-1"
 
 BLOB_CONNECTION_STRING = ""
-BLOB_CONTAINER_NAME = ""
+BLOB_CONTAINER_NAME = "dmcontainer"
 
 ANOMALY_MODEL_NAME = "model_anomaly.pkl"
 PREDICTION_MODEL_NAME = "model_prediction.pkl"

@@ -70,11 +70,7 @@ const SensorList: React.FC<SensorListProps> = ({ machineId, unitId, organization
                         </Link>
                     ))}
                 </div>
-                {/* Added: Button to add new sensor */}
-                <Link to={`/machine/${machineId}/add-sensor`} className="btn btn-primary mt-3 w-100">
-                    <i className="bi bi-plus-circle me-2"></i>
-                    Add New Sensor
-                </Link>
+                <hr/>
             </div>
             {/* Added: Card footer with sensor count */}
             <div className="card-footer text-muted">

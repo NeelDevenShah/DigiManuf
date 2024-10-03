@@ -108,6 +108,7 @@ const MachinePage: React.FC = () => {
             <div style={styles.card}>
                 <h2 style={styles.sectionTitle}>Sensors</h2>
                 <SensorList machineId={machineId} unitId = {unitId} organizationId= {organizationId} machineName={name}/>
+                <hr/>
                 <AddSensor machineId={machineId} unitId = {unitId} organizationId= {organizationId}  />
             </div>
 
