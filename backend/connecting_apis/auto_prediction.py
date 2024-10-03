@@ -8,7 +8,6 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException
 app = FastAPI()
 
 # TODO: Make dynamic as per the data from MongoDB
-# TODO: Central Server Start, Instead of the different ones from different places
 
 # CosmosDB config
 COSMOS_DB_ENDPOINT = ""

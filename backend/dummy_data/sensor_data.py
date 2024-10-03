@@ -11,7 +11,7 @@ DATABASE_NAME = "sensor_data"
 CONTAINER_NAME = "dm-1"
 
 def generate_dummy_data_with_datetime(num_samples=1000, organization_id="001", unit_id="001", machine_id="001", sensor_id="002"):
-    start_datetime = pd.to_datetime("2024-01-01 00:00:00")
+    start_datetime = pd.to_datetime(datetime.now())
     datetime_values = pd.date_range(start=start_datetime, periods=num_samples, freq='s')
     
     temperature = np.random.normal(loc=20, scale=5, size=num_samples)
@@ -51,7 +51,7 @@ def upload_data_to_cosmos(df):
     for i, row in df.iterrows():
         item = row.to_dict()
         
-        datetime_format = '%Y-%m-%d %H:%M:%S'
+        datetime_format = '%Y-%m-%d %H:%M:%S.%f'
         datetime_obj = datetime.strptime(item['datetime'], datetime_format)
         
         formatted_datetime = datetime_obj.strftime('%Y_%m_%dT%H_%M_%S')
@@ -61,7 +61,7 @@ def upload_data_to_cosmos(df):
 
     print(f"Data uploaded to Azure Cosmos DB container '{CONTAINER_NAME}'.")
 
-dummy_data = generate_dummy_data_with_datetime(num_samples=100, organization_id="org001", unit_id="unt001", machine_id="mac002", sensor_id="sen002")
+dummy_data = generate_dummy_data_with_datetime(num_samples=100, organization_id="org001", unit_id="unt001", machine_id="mac001", sensor_id="sen001")
 
 dummy_data.to_csv('dummy_data.csv', index=False)
 dummy_data = pd.read_csv("dummy_data.csv")

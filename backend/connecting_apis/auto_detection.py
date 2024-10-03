@@ -5,9 +5,7 @@ import pandas as pd
 from azure.cosmos import CosmosClient
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 
-# TODO: Testing
 # TODO: Make dynamic as per the data from MongoDB
-# TODO: Central Server Start, Instead of the different ones from different places
 
 # FastAPI app
 app = FastAPI()
@@ -159,7 +157,6 @@ def update_cosmos_with_anomaly_prediction(data, is_anomaly):
     data["anomaly_model_prediction"] = is_anomaly
 
     container.upsert_item(data)
-    print("TMP Executed")
 
 def process_anomaly_detection(df):
     for _, row in df.iterrows():
