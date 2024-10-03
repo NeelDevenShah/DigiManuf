@@ -50,6 +50,7 @@ class SensorDataOutput(BaseModel):
     sensor_id: str
     data: List[TimeSeriesData]
 
+# TESTED: OK
 @app.post("/fetch_anomaly_data_for_sensors")
 def fetch_anomaly_data_for_sensors_api(request: SensorAnomalyDataRequest):
     organization_id = request.organization_id
@@ -62,6 +63,7 @@ def fetch_anomaly_data_for_sensors_api(request: SensorAnomalyDataRequest):
     output = fetch_anomaly_data_for_sensors(organization_id, unit_id, machine_id, sensor_id, start_time, end_time)
     return output
 
+# TESTED: OK
 def fetch_anomaly_data_for_sensors(organization_id: str, unit_id: str, machine_id: str, sensor_id: str, start_time: datetime = None, end_time: datetime = None):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
     database = client.get_database_client(DATABASE_NAME)
@@ -82,45 +84,35 @@ def fetch_anomaly_data_for_sensors(organization_id: str, unit_id: str, machine_i
                 AND c.machine_id = '{machine_id}' 
                 AND c.sensor_id = '{sensor_id}' 
                 AND c.datetime >= '{start_time_str}'
-                AND c.datetime <= '{end_time_str}'"""
-    
+                AND c.datetime <= '{end_time_str}'
+                AND c.anomaly_model_prediction
+                """
     items = list(container.query_items(query=query, enable_cross_partition_query=True))
     df = pd.DataFrame(items)
     print(f"Fetched {len(df)} records from {start_time_str} to {end_time_str} for {organization_id}, {machine_id}, {sensor_id}")
 
-    # Process data into 10-minute intervals
-    df['datetime'] = pd.to_datetime(df['datetime'])
-    df.set_index('datetime', inplace=True)
-    df.sort_index(inplace=True)
+    if 'datetime' in df.columns and 'temperature' in df.columns and 'anomaly_model_prediction' in df.columns:
+        df['datetime'] = pd.to_datetime(df['datetime'])
+        df.set_index('datetime', inplace=True)
+        df.sort_index(inplace=True)
 
-    # Resample to 10-minute intervals
-    resampled = df.resample('10T').agg({
-        'value': 'mean',
-        'is_anomaly': lambda x: any(x)
-    })
+        time_series_data = []
+        for index, row in df.iterrows():
+            time_series_data.append(TimeSeriesData(
+                timestamp=index,
+                value=row['temperature'],
+                is_anomaly=bool(row['anomaly_model_prediction'])
+            ))
 
-    # Format data for JSON output
-    time_series_data = []
-
-    for timestamp, row in resampled.iterrows():
-        # Use Pydantic model for time series data
-        time_series_data.append(TimeSeriesData(
-            timestamp=timestamp,  # Keep as a datetime object, Pydantic will handle formatting
-            value=row['value'],
-            is_anomaly=bool(row['is_anomaly'])
-        ))
-
-    # Prepare the final output using the Pydantic model
-    output = SensorDataOutput(
-        organization_id=organization_id,
-        unit_id=unit_id,
-        machine_id=machine_id,
-        sensor_id=sensor_id,
-        data=time_series_data
-    )
-
-# API and functions done
-
+        return SensorDataOutput(
+            organization_id=organization_id,
+            unit_id=unit_id,
+            machine_id=machine_id,
+            sensor_id=sensor_id,
+            data=time_series_data
+        )
+    else:
+        return
 
 ################### For fetching anomaly data related to the all sensor categories
 
@@ -440,13 +432,11 @@ def fetch_anomaly_data_for_sensors_by_categories(organization_id: str, sensor_ca
 
 async def main():
     result = await fetch_sensor_categories("66f4365ce3011e62e45547be")
+    # result = await fetch_sensor_categories("66f4365ce3011e62e45547be", "66f5535b6b7ab6e6046a016f")
     print(result)
 
-if __name__ == "__main__":
-    asyncio.run(main())
-
 # if __name__ == "__main__":
-#     # uvicorn.run(app, host="0.0.0.0", port=8010)
-#     res = await fetch_sensor_categories("66f4365ce3011e62e45547be", "66f5535b6b7ab6e6046a016f")
-#     print(res)
-#     print("==================")
+    # asyncio.run(main())
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8010)
