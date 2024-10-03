@@ -21,6 +21,7 @@ const MachineList: React.FC<MachineListProps> = ({ unitId, organizationId, unitN
 
     useEffect(() => {
         const getMachineList = async () => {
+            // TODO: Change the URL to fetch data for the organization based on the organizationId, so take the organizationId as a parameter
             const response = await fetch(`http://localhost:3001/api/org/machine/?id=${unitId}`, {
                 method: 'GET',
                 headers: {
@@ -31,7 +32,6 @@ const MachineList: React.FC<MachineListProps> = ({ unitId, organizationId, unitN
             const data = await response.json();
             setMachines(data.data);
 
-            // Move the console.log here to avoid infinite re-rendering
             console.log(data.data);
         };
 
@@ -49,7 +49,7 @@ const MachineList: React.FC<MachineListProps> = ({ unitId, organizationId, unitN
                     {machines.map((machine) => (
                         <Link
                             key={machine._id}
-                            to={`/machine/${machine._id}`}
+                            to={`/machine/${organizationId}/${unitId}/${machine._id}`}
                             className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
                         >
                             <span>

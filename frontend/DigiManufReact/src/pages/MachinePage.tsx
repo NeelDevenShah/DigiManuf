@@ -21,8 +21,6 @@ const dummyData2 = [
     { time: '12:00', value: 350 },
 ];
 
-// Add dummyData3, dummyData4, etc., as needed
-
 const styles: { [key: string]: React.CSSProperties } = {
     container: {
         maxWidth: '1200px',
@@ -73,11 +71,12 @@ const styles: { [key: string]: React.CSSProperties } = {
 };
 
 const MachinePage: React.FC = () => {
-    const { machineId, unitId, organizationId } = useParams<{ machineId: string, unitId?: string, organizationId?: string }>();
+    const {organizationId, unitId, machineId} = useParams<{ organizationId: string, unitId: string, machineId: string }>();
     const [name, setName] = React.useState<string>('');
 
     useEffect(() => {
         const getName = async () => {
+            // TODO: Change the URL to fetch data for the organization based on the organizationId and unitid, so take them as a parameter
             const response = await fetch(`http://localhost:3001/api/org/machine/?mid=${machineId}`, {
                 method: 'GET',
                 headers: {
@@ -89,12 +88,11 @@ const MachinePage: React.FC = () => {
             // setName(data.data);
             setName(data.data[0].name);
 
-            // Move the console.log here to avoid infinite re-rendering
             console.log(data.data);
         };
 
         getName();
-    }, [machineId]); // Adding unitId as a dependency ensures the useEffect runs only when it changes
+    }, [machineId]);
 
 
     if (!machineId) return <div>Machine not found</div>;
@@ -102,7 +100,7 @@ const MachinePage: React.FC = () => {
     return (
         <div style={styles.container}>
             <h1 style={styles.pageTitle}>{name}</h1>
-            <Link to="/unit/1" style={styles.link}>Back to Unit</Link>
+            <Link to={`/unit/${organizationId}/${unitId}`} style={styles.link}>Back to Unit</Link>
 
             {/* Sensors Section */}
             <div style={styles.card}>
@@ -122,7 +120,6 @@ const MachinePage: React.FC = () => {
                     <div style={styles.graphCard}>
                         <TimeSeriesGraph title="Graph 2: Energy Consumption" data={dummyData2} />
                     </div>
-                    {/* Add more graph cards here if you have more dummy data */}
                 </div>
             </div>
         </div>
