@@ -5,12 +5,10 @@ import requests
 from azure.cosmos import CosmosClient
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 
-# TODO: Testing
-# TODO: Connect DB(sql new one or cosmos or mongo), DB(log of training) and debug
-# TODO: Central Server Start, Instead of the different ones from different places
-
-# FastAPI app
 app = FastAPI()
+
+# TODO: Make dynamic as per the data from MongoDB
+# TODO: Central Server Start, Instead of the different ones from different places
 
 # CosmosDB config
 COSMOS_DB_ENDPOINT = ""
@@ -24,12 +22,10 @@ PREDICTION_URL = "http://localhost:8001/predict_values"
 TRAINING_URL = "http://0.0.0.0:8001/train_prediction_model"
 
 # TODO: Make dynamic as per the data from MongoDB
-organizations = ["org001", "org002"]  # You can modify or dynamically fetch organizations
-units = ["unt001", "unt002"]  # You can modify or dynamically fetch organizations
-machines = ["mac001", "mac002"]  # Example machines
-sensors = ["sen001", "sen002"]  # Example sensors
-
-###################### Training Code
+organizations = ["org001", "org002"]
+units = ["unt001", "unt002"]
+machines = ["mac001", "mac002"]
+sensors = ["sen001", "sen002"]
 
 def log_training_to_cosmos(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
@@ -53,7 +49,6 @@ def log_training_to_cosmos(organization_id, unit_id, machine_id, sensor_id, star
 
     container.create_item(log_data)
 
-# Function to call the training API and log results
 def call_training_api(organization_id: str, unit_id:str, machine_id: str, sensor_id: str):
     payload = {
         "organization_id": organization_id,
@@ -65,10 +60,8 @@ def call_training_api(organization_id: str, unit_id:str, machine_id: str, sensor
     start_time = datetime.now()
 
     try:
-        # Call the training API
         response = requests.post(TRAINING_URL, json=payload)
 
-        # Check the response status
         if response.status_code == 200:
             status = "success"
             message = "Training completed successfully"
@@ -85,7 +78,6 @@ def call_training_api(organization_id: str, unit_id:str, machine_id: str, sensor
     model_type = "prediction"
     log_training_to_cosmos(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
 
-# Function to schedule training every 24 hours for each sensor
 async def training_task():
     while True:
         for organization_id in organizations:
@@ -96,16 +88,12 @@ async def training_task():
         
         await asyncio.sleep(86400)  # Sleep for 24 hours
 
-# Manual training trigger
 @app.post("/manual_trigger_training")
 async def manual_trigger_training(organization_id: str, unit_id:str, machine_id: str, sensor_id: str):
-    # Call training API immediately and log the result
+    
     call_training_api(organization_id, unit_id, machine_id, sensor_id)
     return {"detail": "Manual training completed"}
 
-######################
-
-# Function to call API
 async def execute_api_call(organization_id, unit_id, machine_id, sensor_id, periods, start_timestamp=None):
     api_url = PREDICTION_URL
 
@@ -131,7 +119,6 @@ async def execute_api_call(organization_id, unit_id, machine_id, sensor_id, peri
         # print(f"Error during API call: {e}") # As 'NoneType' object is not subscriptable is not error, it is comming as we are returning the null from the API when there is not model related to it
         return
 
-# Function to store predictions in CosmosDB
 def store_prediction_in_cosmos(data, periods):
     organization_id = data["organization_id"]
     unit_id = data["unit_id"]
@@ -142,7 +129,6 @@ def store_prediction_in_cosmos(data, periods):
     database = client.get_database_client(DATABASE_NAME)
     container = database.get_container_client(SENSOR_PRED_CONTAINER_NAME)
 
-    # Fetch current timestamp
     current_time = datetime.now()
     formatted_datetime = current_time.strftime('%Y_%m_%dT%H_%M_%S')
 
@@ -162,8 +148,6 @@ def store_prediction_in_cosmos(data, periods):
 
         container.create_item(log_data)
 
-# Schedule task for every 2 hours
-# TODO: Make dynamic as per the data from MongoDB
 async def schedule_api_calls(periods=24):
     while True:
         for organization_id in organizations:
@@ -173,14 +157,11 @@ async def schedule_api_calls(periods=24):
                         await execute_api_call(organization_id, unit_id, machine_id, sensor_id, periods)
         await asyncio.sleep(7200)  # Sleep for 2 hours (7200 seconds)
 
-# API endpoint for manual trigger
 @app.post("/manual_trigger")
 async def manual_trigger(organization_id: str, unit_id:str, machine_id: str, sensor_id: str, periods: int, start_timestamp: str, background_tasks: BackgroundTasks):
-    # Manually trigger API call
     data = await execute_api_call(organization_id, unit_id, machine_id, sensor_id, periods, start_timestamp)
     return data
 
-# Run API calls in background
 @app.on_event("startup")
 async def start_background_tasks():
     asyncio.create_task(schedule_api_calls())

@@ -6,7 +6,7 @@ from azure.cosmos import CosmosClient
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 
 # TODO: Testing
-# TODO: Connect DB(auth one) and DB(timedate cosmos), DB (log of training) and debug
+# TODO: Make dynamic as per the data from MongoDB
 # TODO: Central Server Start, Instead of the different ones from different places
 
 # FastAPI app
@@ -25,14 +25,11 @@ ANOMALY_URL = "http://0.0.0.0:8000/predict_anomaly"
 TRAINING_URL = "http://0.0.0.0:8000/train_anomaly_model"
 
 # TODO: Make dynamic as per the data from MongoDB
-organizations = ["org001", "org002"]  # You can modify or dynamically fetch organizations
-units = ["unt001", "unt002"]  # You can modify or dynamically fetch organizations
-machines = ["mac001", "mac002"]  # Example machines
-sensors = ["sen001", "sen002"]  # Example sensors
+organizations = ["org001", "org002"]
+units = ["unt001", "unt002"]
+machines = ["mac001", "mac002"]
+sensors = ["sen001", "sen002"]
 
-###################### Training Code
-
-# Function to log training status to CosmosDB
 def log_training_to_cosmos(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
     database = client.get_database_client(DATABASE_NAME)
@@ -55,7 +52,6 @@ def log_training_to_cosmos(organization_id, unit_id, machine_id, sensor_id, star
 
     container.create_item(log_data)
 
-# Function to call the training API and log results
 def call_training_api(organization_id: str, unit_id: str, machine_id: str, sensor_id: str):
     payload = {
         "organization_id": organization_id,
@@ -67,10 +63,8 @@ def call_training_api(organization_id: str, unit_id: str, machine_id: str, senso
     start_time = datetime.now()
 
     try:
-        # Call the training API
         response = requests.post(TRAINING_URL, json=payload)
 
-        # Check the response status
         if response.status_code == 200:
             status = "success"
             message = "Training completed successfully"
@@ -87,7 +81,6 @@ def call_training_api(organization_id: str, unit_id: str, machine_id: str, senso
     model_type = "anomaly"
     log_training_to_cosmos(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type)
 
-# Function to schedule training every 24 hours for each sensor
 async def training_task():
     while True:
         for organization_id in organizations:
@@ -98,16 +91,12 @@ async def training_task():
         
         await asyncio.sleep(86400)  # Sleep for 24 hours
 
-# Manual training trigger
 @app.post("/manual_trigger_training")
 async def manual_trigger_training(organization_id: str, unit_id: str, machine_id: str, sensor_id: str):
-    # Call training API immediately and log the result
+
     call_training_api(organization_id, unit_id, machine_id, sensor_id)
     return {"detail": "Manual training completed"}
 
-######################
-
-# Function to fetch data from CosmosDB (last 10 minutes)
 def fetch_data_from_cosmos(organization_id: str, unit_id: str, machine_id: str, sensor_id: str):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
     database = client.get_database_client(DATABASE_NAME)
@@ -117,7 +106,6 @@ def fetch_data_from_cosmos(organization_id: str, unit_id: str, machine_id: str, 
     ten_minutes_ago = datetime.now() - timedelta(minutes=10)
     ten_minutes_ago_str = ten_minutes_ago.strftime('%Y-%m-%d %H:%M:%S')
 
-    # Query data from last 10 minutes
     query = f"""SELECT * FROM c 
                 WHERE c.organization_id = '{organization_id}' 
                 AND c.unit_id = '{unit_id}' 
@@ -130,7 +118,6 @@ def fetch_data_from_cosmos(organization_id: str, unit_id: str, machine_id: str, 
     print(f"Fetched {len(df)} records from the last 10 minutes for {organization_id}, {machine_id}, {sensor_id}")
     return df
 
-# Function to call anomaly detection API
 def call_anomaly_api(data):
     try:
         api_url = ANOMALY_URL
@@ -164,28 +151,24 @@ def call_anomaly_api(data):
         # print(f"Error during API call: {e}") # As 'NoneType' object is not subscriptable is not error, it is comming as we are returning the null from the API when there is not model related to it
         return
 
-# Function to update data in CosmosDB with anomaly prediction
 def update_cosmos_with_anomaly_prediction(data, is_anomaly):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
     database = client.get_database_client(DATABASE_NAME)
     container = database.get_container_client(CONTAINER_NAME)
 
-    # Add anomaly prediction to the existing document
     data["anomaly_model_prediction"] = is_anomaly
 
-    # Replace the document with updated data
     container.upsert_item(data)
+    print("TMP Executed")
 
-# Function to execute anomaly detection for each fetched record
 def process_anomaly_detection(df):
     for _, row in df.iterrows():
-        # Call anomaly API for each record
+        
         anomaly_response = call_anomaly_api(row)
         is_anomaly = anomaly_response.get("is_anomaly", False)
 
         update_cosmos_with_anomaly_prediction(row.to_dict(), is_anomaly)
 
-# Scheduled task to check for anomalies every 5 minutes
 async def anomaly_detection_task():
     while True:
         for organization_id in organizations:
@@ -197,7 +180,6 @@ async def anomaly_detection_task():
                             process_anomaly_detection(df)
         await asyncio.sleep(300)  # Run every 5 minutes
 
-# Manual trigger for immediate anomaly detection
 @app.post("/manual_trigger_anomaly")
 async def manual_trigger_anomaly(organization_id: str, unit_id: str, machine_id: str, sensor_id: str, background_tasks: BackgroundTasks):
     df = fetch_data_from_cosmos(organization_id, unit_id, machine_id, sensor_id)
@@ -206,7 +188,6 @@ async def manual_trigger_anomaly(organization_id: str, unit_id: str, machine_id:
         process_anomaly_detection(df)
     return {"detail": "Manual anomaly detection completed"}
 
-# Background task startup
 @app.on_event("startup")
 async def start_background_tasks():
     asyncio.create_task(anomaly_detection_task())

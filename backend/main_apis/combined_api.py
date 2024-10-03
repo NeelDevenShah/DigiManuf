@@ -14,7 +14,6 @@ import numpy as np
 
 # ARCHIEVED, CURRENTLY THIS FILE IS NOT IN WORKING
 
-# FastAPI app
 app = FastAPI()
 
 # Azure configuration
@@ -26,7 +25,6 @@ CONTAINER_NAME = "dm-1"
 BLOB_CONNECTION_STRING = ""
 BLOB_CONTAINER_NAME = "dmcontainer"
 
-# Initialize BlobServiceClient
 blob_service_client = BlobServiceClient.from_connection_string(BLOB_CONNECTION_STRING)
 container_client = blob_service_client.get_container_client(BLOB_CONTAINER_NAME)
 
@@ -56,15 +54,15 @@ class AnomalyDetectionOutput(BaseModel):
     sensor_id: str
   
 class PredictionInput(BaseModel):
-    periods: int  # Number of future periods to predict
-    start_timestamp: Optional[str] = None  # Optional start timestamp in ISO format
+    periods: int
+    start_timestamp: Optional[str] = None
     organization_id: str
     unit_id: str
     machine_id: str
     sensor_id: str
 
 class PredictionOutput(BaseModel):
-    predictions: List[float]  # List of predicted values
+    predictions: List[float]
     organization_id: str
     unit_id: str
     machine_id: str
@@ -80,7 +78,6 @@ class TrainingOutput(BaseModel):
     code: int
     msg: str
 
-# Function to fetch data from Cosmos DB
 async def fetch_data_from_cosmos(organization_id: str, unit_id: str, machine_id: str, sensor_id: str):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
     database = client.get_database_client(DATABASE_NAME)
@@ -107,20 +104,17 @@ def download_from_azure(blob_service_client, container_name, blob_prefix, local_
         with open(download_file_path, "wb") as download_file:
             download_file.write(blob_client.download_blob().readall())
 
-# Function to train models and save them to Azure Blob Storage
 async def train_and_save_models(df, organization_id, unit_id, machine_id, sensor_id):
     # Training the prediction model
     prediction_model = train_prediction_model(df)
     save_model_to_azure(prediction_model, organization_id, unit_id, machine_id, sensor_id, 'prediction')
 
-    # Training the anomaly detection model
     anomaly_model, scaler = train_anomaly_detection_model(df)
     save_model_to_azure(anomaly_model, organization_id, unit_id, machine_id, sensor_id, 'anomaly')
     save_model_to_azure(scaler, organization_id, unit_id, machine_id, sensor_id, 'scaler')
 
     return
 
-# Train prediction model
 def train_prediction_model(df):
     df['timestamp'] = pd.to_datetime(df['datetime'])
     df = df.rename(columns={'timestamp': 'ds', 'temperature': 'y'})
@@ -128,7 +122,6 @@ def train_prediction_model(df):
     model.fit(df)
     return model
 
-# Train anomaly detection model
 def train_anomaly_detection_model(df):
     features = ["temperature", "minute", "hour", "day", "month", "year", "day_of_week", "is_weekend", "rolling_mean_temp", "rolling_std_temp", "temp_lag_1s"]
     X = df[features]
@@ -138,34 +131,27 @@ def train_anomaly_detection_model(df):
     model.fit(X_scaled)
     return model, scaler
 
-# Save model to Azure Blob Storage
 def save_model_to_azure(model, organization_id, unit_id, machine_id, sensor_id, model_type):
 
     model_name = f"{organization_id}_{unit_id}_{machine_id}_{sensor_id}_{model_type}.pkl"
     
-    # Save model and scaler to a local file
     with open(model_name, "wb") as f:
         joblib.dump(model, f)
     
-    # Create a BlobServiceClient
     blob_client = blob_service_client.get_blob_client(container=BLOB_CONTAINER_NAME, blob=f"{organization_id}/{unit_id}/{machine_id}/{sensor_id}/{model_type}.pkl")
     
-    # Upload the model file to Blob Storage
     with open(model_name, "rb") as data:
         blob_client.upload_blob(data, overwrite=True)
     os.remove(model_name)
 
-# Load model from Azure Blob Storage
 def load_model_from_azure(organization_id, unit_id, machine_id, sensor_id, model_type):
     model_name = f"{organization_id}_{unit_id}_{machine_id}_{sensor_id}_{model_type}.pkl"
     
     blob_client = blob_service_client.get_blob_client(container=BLOB_CONTAINER_NAME, blob=f"{organization_id}/{unit_id}/{machine_id}/{sensor_id}/{model_type}.pkl")
     
-    # Download the model file from Blob Storage
     with open(model_name, "wb") as download_file:
         download_file.write(blob_client.download_blob().readall())
 
-    # Load the model from the file
     model = joblib.load(model_name)
     
     os.remove(model_name)
@@ -173,14 +159,12 @@ def load_model_from_azure(organization_id, unit_id, machine_id, sensor_id, model
     
     return model
 
-# API to train models
 @app.post("/train_models", response_model=TrainingOutput)
 async def train_models(data: TrainingInput):
     df = await fetch_data_from_cosmos(data.organization_id, data.unit_id, data.machine_id, data.sensor_id)
     await train_and_save_models(df, data.organization_id, data.unit_id, data.machine_id, data.sensor_id)
     return TrainingOutput(code=200, msg="Model trained and saved to the azure blob")
 
-# API to predict values
 @app.post("/predict_values", response_model=PredictionOutput)
 async def predict_values(data: PredictionInput):
     
@@ -189,30 +173,24 @@ async def predict_values(data: PredictionInput):
     if data.start_timestamp:
         start_date = pd.to_datetime(data.start_timestamp)
     else:
-        # Use the current time for the start_date
         start_date = pd.Timestamp(datetime.now())
 
-        # Optionally, if you want to ensure that the start_date is rounded to the nearest hour, you can do:
         start_date = start_date.ceil('H')
 
     future = model.make_future_dataframe(periods=data.periods, freq='H', include_history=False)
     future['ds'] = pd.date_range(start=start_date, periods=data.periods, freq='H')
 
-    # Predict future values
     forecast = model.predict(future)
 
-    # Extract the predicted values (yhat)
     predictions = forecast['yhat'].tolist()
 
     return PredictionOutput(predictions=predictions, organization_id=data.organization_id, unit_id=data.unit_id, machine_id=data.machine_id, sensor_id=data.sensor_id)
 
-# API to detect anomalies
 @app.post("/detect_anomalies", response_model=AnomalyDetectionOutput)
 async def detect_anomalies(data: AnomalyDetectionInput):
     model = load_model_from_azure(data.organization_id, data.unit_id, data.machine_id, data.sensor_id, 'anomaly')
     scaler = load_model_from_azure(data.organization_id, data.unit_id, data.machine_id, data.sensor_id, 'scaler')
     
-     # Convert input data to numpy array
     instance = np.array([
         data.temperature, 
         data.minute, 
@@ -227,10 +205,8 @@ async def detect_anomalies(data: AnomalyDetectionInput):
         data.temp_lag_1s
     ])
     
-    # Scale input data
     instance_scaled = scaler.transform(instance.reshape(1, -1))
     
-    # Predict using Isolation Forest
     prediction = model.predict(instance_scaled)
     is_anomaly=(prediction[0] == -1)
     
