@@ -24,10 +24,10 @@ PREDICTION_URL = "http://localhost:8001/predict_values"
 TRAINING_URL = "http://0.0.0.0:8001/train_prediction_model"
 
 # TODO: Make dynamic as per the data from MongoDB
-organizations = ["org_001"]  # You can modify or dynamically fetch organizations
-units = ["unt_001"]  # You can modify or dynamically fetch organizations
-machines = ["mach_001"]  # Example machines
-sensors = ["sens_001"]  # Example sensors
+organizations = ["org001", "org002"]  # You can modify or dynamically fetch organizations
+units = ["unt001", "unt002"]  # You can modify or dynamically fetch organizations
+machines = ["mac001", "mac002"]  # Example machines
+sensors = ["sen001", "sen002"]  # Example sensors
 
 ###################### Training Code
 

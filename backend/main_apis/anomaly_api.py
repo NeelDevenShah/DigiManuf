@@ -48,7 +48,7 @@ def fetch_data_from_cosmos(organization_id: str, unit_id: str, machine_id: str, 
         print(f"fetched {len(df)} data from the cosmos related to the {organization_id}, {machine_id}, {sensor_id}")
         return df
     except:
-        return pd.Dataframe()
+        return pd.DataFrame()
 
 # Function to train the Isolation Forest model
 def train_model(df):
