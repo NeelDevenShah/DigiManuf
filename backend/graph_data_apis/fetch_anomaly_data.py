@@ -2,20 +2,20 @@ from azure.cosmos import CosmosClient
 import pandas as pd
 from datetime import datetime, timedelta
 import pandas as pd
-import uvicor
+import uvicorn
 from fastapi import FastAPI, Query
 from pydantic import BaseModel
-from typing import List, Optional
-from fastapi.responses import JSONResponsen
+from typing import List, Optional, Dict
+from fastapi.responses import JSONResponse
 from azure.cosmos import CosmosClient
-
-from models.organization import Organization
-from models.unit import Unit
-from models.machine import Machine
-from models.sensor import Sensor
+from pymongo import MongoClient
 from bson.objectid import ObjectId
+import asyncio
 
+# TODO: File under Process
 # TODO: Testing
+
+app = FastAPI()
 
 # CosmosDB config
 COSMOS_DB_ENDPOINT = ""
@@ -24,6 +24,9 @@ DATABASE_NAME = "sensor_data"
 CONTAINER_NAME = "dm-1"
 LOG_CONTAINER_NAME = "log-container"
 SENSOR_PRED_CONTAINER_NAME = "sensor-predictions"
+
+client = MongoClient("")
+db = client['digimanuf']
 
 ############# For fetching anomaly the data related to the particular sensor
 
@@ -134,7 +137,7 @@ class AnomalyDataRequest(BaseModel):
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     
-@app.post("/fetch_sensor_categories", response_model=SensorCategoryResponse)
+@app.post("/fetch_sensor_categories")
 def fetch_sensor_categories_api(request: SensorCategoryRequest):
     categories = fetch_sensor_categories(
         organization_id=request.organization_id,
@@ -143,9 +146,9 @@ def fetch_sensor_categories_api(request: SensorCategoryRequest):
     )
     
     if not categories:
-        return SensorCategoryResponse(message="No categories found for the specified criteria")
+        return 
     
-    return SensorCategoryResponse(sensor_categories=categories)
+    return categories
 
 @app.post("/fetch_anomaly_data_for_sensors_by_all_category")
 def fetch_anomaly_data_api(request: AnomalyDataRequest):
@@ -171,28 +174,27 @@ def fetch_anomaly_data_api(request: AnomalyDataRequest):
     return data
 
 # TODO: Testing, with the mongoDB
-def fetch_sensor_categories(organization_id: str, unit_id: str = None, machine_id: str = None):
+async def fetch_sensor_categories(organization_id: str, unit_id: str = None, machine_id: str = None):
     try:
-        # Step 1: Fetch the sensors based on organization, unit, and machine
         query = {"organization": ObjectId(organization_id)}
-
         if unit_id:
             query["unit"] = ObjectId(unit_id)
 
         if machine_id:
             query["machine"] = ObjectId(machine_id)
 
-        # Step 2: Fetch the sensors based on the conditions
-        sensors = Sensor.find(query)
-
-        # Step 3: Create a dictionary of sensor IDs and categories
-        categories = {str(sensor._id): sensor.type for sensor in sensors}
-
+        sensors = db.sensors.find()
+        # print(all_sensors)
+        for sensor in list(sensors):
+            print(sensor)
+            print("**")
+        print("-----------")
+        categories = {str(sensor["_id"]): sensor["type"] for sensor in sensors}
         return categories
 
     except Exception as e:
         print(f"Error: {e}")
-        return {}
+        return
 
 class SensorCategoryDataResponse(BaseModel):
     organization_id: str
@@ -284,15 +286,17 @@ def fetch_sensor_ids_by_categories(organization_id: str, sensor_categories: list
             "type": {"$in": sensor_categories}  # Matching the categories
         }
 
-        # Step 2: Add unit and machine conditions if provided
         if unit_id:
             query["unit"] = ObjectId(unit_id)
-
         if machine_id:
             query["machine"] = ObjectId(machine_id)
 
-        # Step 3: Query MongoDB to fetch the sensors that match the conditions
-        sensors = Sensor.find(query)
+        sensors = db.sensors.find()
+        for sensor in sensors:
+            print(sensor)
+        print("-----------")
+        categories = {str(sensor["_id"]): sensor["type"] for sensor in sensors}
+        return categories
 
         # Step 4: Create a dictionary of sensor IDs and their categories
         sensor_data = {str(sensor._id): sensor.type for sensor in sensors}
@@ -434,5 +438,15 @@ def fetch_anomaly_data_for_sensors_by_categories(organization_id: str, sensor_ca
     # Return the JSON representation of the output
     return output
 
+async def main():
+    result = await fetch_sensor_categories("66f4365ce3011e62e45547be")
+    print(result)
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    asyncio.run(main())
+
+# if __name__ == "__main__":
+#     # uvicorn.run(app, host="0.0.0.0", port=8010)
+#     res = await fetch_sensor_categories("66f4365ce3011e62e45547be", "66f5535b6b7ab6e6046a016f")
+#     print(res)
+#     print("==================")
