@@ -8,19 +8,20 @@ import UnitPage from './pages/UnitPage';
 import MachinePage from './pages/MachinePage';
 import SensorPage from './pages/SensorPage';
 
+// TODO: Reloading of the page or component when any of the new things is added to it.
+
 function App() {
     return (
         <AuthProvider>
             <Router>
                 <Routes>
-                    {/* The code does not have the organization Id which is required for the entire setup, And here in argument we have to pass all the ids hierarchically to all the components */}
-                    {/* path="/machine/:machineId/unit/:unitId/organization/:organizationId", which means the machine page with parameters machineId, unitId, organizationId */}
                     <Route path="/" element={<LoginPage />} />
+                    <Route path="/login" element={<LoginPage />} />
                     <Route path="/signup" element={<SignUpPage />} />
-                    <Route path="/organization" element={<OrganizationPage />} />
-                    <Route path="/unit/:unitId" element={<UnitPage />} />
-                    <Route path="/machine/:machineId" element={<MachinePage />} />
-                    <Route path="/sensor/:sensorId" element={<SensorPage />} />
+                    <Route path="/organization/:organizationId" element={<OrganizationPage />} />
+                    <Route path="/unit/:organizationId/:unitId/" element={<UnitPage />} />
+                    <Route path="/machine/:organizationId/:unitId/:machineId" element={<MachinePage />} />
+                    <Route path="/sensor/:organizationId/:unitId/:machineId/:sensorId" element={<SensorPage />} />
                 </Routes>
             </Router>
         </AuthProvider>

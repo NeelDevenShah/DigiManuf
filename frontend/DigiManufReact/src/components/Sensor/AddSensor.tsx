@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-// Import Bootstrap CSS (assuming you've added it to your project)
 import 'bootstrap/dist/css/bootstrap.min.css';
-// Import Bootstrap icons for enhanced UI
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 interface AddSensorProps {
@@ -16,8 +14,8 @@ const AddSensor: React.FC<AddSensorProps> = ({ machineId, unitId, organizationId
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Implement add sensor logic here
         const addSensor = async () => {
+            // TODO: Change the URL to put units for the data based on the organizationId and unitId, so takes them as a parameter
             const response = await fetch('http://localhost:3001/api/org/sensor', {
                 method: 'POST',
                 headers: {
@@ -34,17 +32,14 @@ const AddSensor: React.FC<AddSensorProps> = ({ machineId, unitId, organizationId
     };
 
     return (
-        // Added: Card component for a modern, elevated look
         <div className="card shadow-sm">
             <div className="card-body">
                 <h5 className="card-title mb-3">
                     <i className="bi bi-plus-circle me-2"></i>
                     Add New Sensor
                 </h5>
-                {/* Enhanced: Form with Bootstrap classes */}
                 <form onSubmit={handleSubmit} className="needs-validation" noValidate>
                     <div className="mb-3">
-                        {/* Enhanced: Input group with icon for better visual cues */}
                         <div className="input-group has-validation">
                             <span className="input-group-text">
                                 <i className="bi bi-tag"></i>
@@ -63,7 +58,6 @@ const AddSensor: React.FC<AddSensorProps> = ({ machineId, unitId, organizationId
                         </div>
                     </div>
                     <div className="mb-3">
-                        {/* Enhanced: Input group with icon for better visual cues */}
                         <div className="input-group has-validation">
                             <span className="input-group-text">
                                 <i className="bi bi-cpu"></i>
@@ -81,14 +75,12 @@ const AddSensor: React.FC<AddSensorProps> = ({ machineId, unitId, organizationId
                             </div>
                         </div>
                     </div>
-                    {/* Enhanced: Button with Bootstrap styling and icon */}
                     <button type="submit" className="btn btn-primary w-100">
                         <i className="bi bi-plus-circle me-2"></i>
                         Add Sensor
                     </button>
                 </form>
             </div>
-            {/* Added: Card footer to display the machine ID */}
             <div className="card-footer text-muted">
                 <small>Adding to Machine ID: {machineId}</small>
             </div>
