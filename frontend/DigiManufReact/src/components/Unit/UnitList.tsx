@@ -8,7 +8,7 @@ interface Unit {
     name: string;
 }
 
-const UnitList: React.FC = () => {
+const UnitList: React.FC<{ organizationId: string }> = ({ organizationId }) => {
     const [units, setUnits] = useState<Unit[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -16,6 +16,7 @@ const UnitList: React.FC = () => {
     // Fetch units from API
     const getData = async () => {
         try {
+            // TODO: Change the URL to fetch data for the organization based on the organizationId, so take the organizationId as a parameter
             const response = await fetch('http://localhost:3001/api/org/unit', {
                 method: 'GET',
                 headers: {
@@ -29,7 +30,7 @@ const UnitList: React.FC = () => {
             }
 
             const data = await response.json();
-            setUnits(data.data); // Assuming the response is an array of units
+            setUnits(data.data);
             setLoading(false);
         } catch (err: any) {
             setError(err.message || 'Something went wrong');
@@ -37,7 +38,6 @@ const UnitList: React.FC = () => {
         }
     };
 
-    // Fetch units on component mount
     useEffect(() => {
         getData();
     }, []);
@@ -51,22 +51,18 @@ const UnitList: React.FC = () => {
                             <i className="bi bi-list-ul me-2"></i>Unit List
                         </h2>
                         <div className="card-body">
-                            {/* Conditional Rendering: Loading state */}
                             {loading && <p>Loading units...</p>}
 
-                            {/* Conditional Rendering: Error state */}
                             {error && <p className="text-danger">{error}</p>}
 
-                            {/* Conditional Rendering: Empty state */}
                             {!loading && !error && units.length === 0 && <p>No units available.</p>}
 
-                            {/* Render unit list if data is available */}
                             {!loading && !error && units.length > 0 && (
                                 <ul className="list-group list-group-flush">
                                     {units.map((unit) => (
                                         <li key={unit._id} className="list-group-item p-0">
                                             <Link
-                                                to={`/unit/${unit._id}`}
+                                                to={`/unit/${organizationId}/${unit._id}`}
                                                 className="d-flex justify-content-between align-items-center p-3 text-decoration-none text-dark"
                                             >
                                                 <span>

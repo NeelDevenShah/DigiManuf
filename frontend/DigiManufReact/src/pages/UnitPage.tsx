@@ -70,7 +70,7 @@ const styles: { [key: string]: React.CSSProperties } = {
 };
 
 const UnitPage: React.FC = () => {
-    const { unitId, organizationId } = useParams<{ unitId: string, organizationId: string }>();
+    const { organizationId, unitId } = useParams<{organizationId: string,  unitId: string}>();
     const [name, setName] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -78,6 +78,7 @@ const UnitPage: React.FC = () => {
     useEffect(() => {
         const getName = async () => {
             try {
+                // TODO: Change the URL to fetch data for the organization based on the organizationId, so take the organizationId as a parameter
                 const response = await fetch(`http://localhost:3001/api/org/unit/?id=${unitId}`, {
                     method: 'GET',
                     headers: {
@@ -92,7 +93,7 @@ const UnitPage: React.FC = () => {
 
                 const data = await response.json();
                 console.log(data.data.name)
-                setName(data.data.name || 'Unknown Unit'); // Use a default value if name is not found
+                setName(data.data.name || 'Unknown Unit');
                 setLoading(false);
             } catch (err: any) {
                 setError(err.message || 'Something went wrong');
@@ -103,7 +104,7 @@ const UnitPage: React.FC = () => {
         if (unitId) {
             getName();
         }
-    }, [unitId]); // Only re-run if unitId changes
+    }, [unitId]);
 
     if (loading) {
         return <div>Loading...</div>;
@@ -120,12 +121,13 @@ const UnitPage: React.FC = () => {
     return (
         <div style={styles.container}>
             <h1 style={styles.pageTitle}>Unit: {name}</h1>
-            <Link to="/organization" style={styles.link}>Back to Organization</Link>
+            <Link to={`/organization/${organizationId}`} style={styles.link}>Back to Organization</Link>
 
             {/* Machine List Section */}
             <div style={styles.card}>
                 <h2 style={styles.sectionTitle}>Machines</h2>
                 <MachineList unitId={unitId} organizationId={organizationId} unitName={name} />
+                <hr/>
                 <AddMachine unitId={unitId} organizationId={organizationId} />
             </div>
 

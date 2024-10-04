@@ -15,7 +15,9 @@ const Login: React.FC = () => {
         try {
             await login(email, password);
             if (!error) {
-                navigate('/organization'); // Only navigate if no error
+                // TODO: Adding the organization ID to the path, retrieve it from the backend
+                var organizationId = 'org001'; // For temporary purpose making it static 
+                navigate(`/organization/${organizationId}`); // Only navigate if no error
             }
         } catch (error) {
             console.error('Login failed:', error);

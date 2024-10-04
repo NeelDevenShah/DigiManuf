@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { useParams, Link } from 'react-router-dom';
 import OrganizationDashboard from '../components/Organization/OrganizationDashboard';
 import AddUser from '../components/Organization/AddUser';
 import UnitList from '../components/Unit/UnitList';
@@ -72,30 +72,32 @@ const styles: { [key: string]: React.CSSProperties } = {
 };
 
 const OrganizationPage: React.FC = () => {
+    const {organizationId } = useParams<{organizationId: string }>();
+    const effectiveOrganizationId = organizationId ?? 'org001';
 
     return (
         <div style={styles.container}>
             <h1 style={styles.pageTitle}>Organization Dashboard</h1>
-            <Link to="/" style={styles.link}>Back to Home</Link>
+            <Link to="/login" style={styles.link}>Log Out</Link>
 
             {/* Dashboard Section */}
             <div style={styles.card}>
                 <h2 style={styles.sectionTitle}>Overview</h2>
-                <OrganizationDashboard />
+                <OrganizationDashboard organizationId={effectiveOrganizationId}/>
             </div>
 
             {/* Users Section */}
             <div style={styles.card}>
                 <h2 style={styles.sectionTitle}></h2>
-                <AddUser />
+                <AddUser organizationId= {effectiveOrganizationId}/>
                 <h2 style={styles.sectionTitle}></h2>
             </div>
 
             {/* Manufacturing Units Section */}
             <div style={styles.card}>
                 <h2 style={styles.sectionTitle}>Manufacturing Units</h2>
-                <UnitList />
-                <AddUnit />
+                <UnitList organizationId={effectiveOrganizationId}/>
+                <AddUnit organizationId={effectiveOrganizationId}/>
             </div>
 
             {/* Graph Section */}

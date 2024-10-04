@@ -91,12 +91,12 @@ DigiManuf incorporates advanced machine learning models for:
    uvicorn main:app --reload
    ```
 
-5. Azure Services Configuration:
+   5. Azure Services Configuration:
 
-   - Set up Azure Digital Twin, CosmosDB, and Key Vault services as per the documentation.
-   - Update environment variables in .env files for both backends.
+      - Set up Azure Digital Twin, CosmosDB, Key Vault, and Azure Blob Storage services as per the documentation.
+      - Update environment variables in .env files for both backends.
 
-6. Run the Application:
+   6. Run the Application:
 
    - Ensure both backends are running.
    - Access the frontend via localhost:3000 to interact with the system.

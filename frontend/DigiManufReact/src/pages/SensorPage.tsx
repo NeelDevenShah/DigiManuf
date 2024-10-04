@@ -85,11 +85,12 @@ const styles: { [key: string]: React.CSSProperties } = {
 };
 
 const SensorPage: React.FC = () => {
-    const { sensorId } = useParams<{ sensorId: string}>();
+    const {organizationId, unitId, machineId, sensorId } = useParams<{organizationId: string, unitId: string, machineId: string,  sensorId: string}>();
     const [sensor, setSensor] = React.useState<any>();
 
     useEffect(() => {
         let getName = async()=>{
+            // TODO: Change the URL to fetch data for the organization based on the organizationId, so take the organizationId, unitId, machineId as a parameter
             const response = await fetch(`http://localhost:3001/api/org/sensor/?sid=${sensorId}`, {
                 method: 'GET',
                 headers: {
@@ -109,7 +110,7 @@ const SensorPage: React.FC = () => {
     return (
         <div style={styles.container}>
             <h1 style={styles.pageTitle}>Sensor {sensor}</h1>
-            <Link to="/machine/" style={styles.link}>Back to Machine</Link>
+            <Link to={`/machine/${organizationId}/${unitId}/${machineId}`} style={styles.link}>Back to Machine</Link>
             <p style={styles.card}>Sensor details go here</p>
 
 
