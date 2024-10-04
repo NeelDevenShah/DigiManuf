@@ -86,7 +86,7 @@ const MachinePage: React.FC = () => {
             });
 
             const data = await response.json();
-            setName(data.data[0].name);
+            setName(data.data.name);
         };
 
         getName();

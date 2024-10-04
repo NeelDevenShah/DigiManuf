@@ -22,7 +22,7 @@ const MachineList: React.FC<MachineListProps> = ({ unitId, organizationId, unitN
     useEffect(() => {
         const getMachineList = async () => {
             // TODO: Change the URL to fetch data for the organization based on the organizationId, so take the organizationId as a parameter
-            const response = await fetch(`http://localhost:3001/api/org/machine/?id=${unitId}`, {
+            const response = await fetch(`http://localhost:3001/api/org/machine/?uid=${unitId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',

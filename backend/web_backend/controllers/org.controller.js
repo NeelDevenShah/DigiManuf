@@ -11,15 +11,12 @@ const SECRET_KEY = process.env.SECRET_KEY;
 
 exports.getOrg = async (req, res) => {
     try {
-
-        const user = req.user;
-        let uid = user.organization;
+        let uid = req.userOrg;
         console.log("org id", uid)
 
         if(uid){
             let org = await Org.findById({_id: uid});
-            // console.log("req.userOrg",req.userOrg)
-            // console.log("org._id.toString()",org._id.toString())
+            
             if (!org || org._id.toString() !== req.userOrg.toString()) {
                 return res.status(403).json({ error: 'Access Denied: You are not authorized to view this organization' });
             }
@@ -37,20 +34,47 @@ exports.getOrg = async (req, res) => {
 
 
 exports.getMachine = async (req, res) => {
-    try {
-        if(req.query.uid){
-            let machine = await Machine.find({unit: req.query.uid});
-            return res.status(200).json({ success: true, data: machine });
-        }
-        else if(req.query.mid){
-            let machine = await Machine.find({_id: req.query.mid});
-            return res.status(200).json({ success: true, data: machine });
-        }
-        else{
-            let machines = await Machine.find();
-            return res.status(200).json({success:true, data: machines})
+    try 
+    {
+        let oid = req.userOrg
+        let mid = req.query.mid 
+        let uid = req.query.uid
+
+        // for all machines in organization
+        if(oid && mid == null){
+            let machines = await Machine.find({organization: oid});
+            if(machines){
+                return res.status(200).json({ success: true, data: machines });
+            }
+            else{
+                return res.status(404).json({error: 'Machine not found'})
+            }
         }
 
+        // list machine of organization by organization and unit
+        else if(oid && uid && mid==null){
+            let machines = await Machine.find({organization:oid, unit:uid})
+            if(machines){
+                return res.status(200).json({ success: true, data: machines });
+            }
+            else{
+                return res.status(404).json({error: 'Machine not found'})
+            }
+        }
+
+        else if(mid){
+            let machine = await Machine.find({organization:oid, unit:uid, _id:mid})
+            if(machine){
+                return res.status(200).json({ success: true, data: machine });
+            }
+            else{
+                return res.status(404).json({error: 'Machine not found'})
+            }
+        }
+        else{
+            return res.status(403).json({error: 'User is not part of any organization'})
+        }
+  
     } catch (error) {
         console.log(error);
         return res.status(500).json({ error: 'Internal server error' });
@@ -60,18 +84,59 @@ exports.getMachine = async (req, res) => {
 
 exports.getSensor = async (req, res) => {
     try {
-        if(req.query.mid){
-            let sensor = await Sensor.find({machine: req.query.mid});
-            return res.status(200).json({ success: true, data: sensor });
+        let oid = req.userOrg
+        let sid = req.query.sid
+        let mid = req.query.mid
+        let uid = req.query.uid
+
+        // for all sensors in organization
+
+        if(oid && sid == null){
+            let sensors = await Sensor.find({organization:oid})
+            if(sensors){
+                return res.status(200).json({ success: true, data: sensors })
+            }
+            else{
+                return res.status(404).json({error: 'Sensors not found'})
+            }
         }
-        else if(req.query.id){
-            let sensor = await Sensor.find({_id: req.query.mid});
-            return res.status(200).json({ success: true, data: sensor });
+
+        // list sensor of organization by organization and unit
+
+        else if(oid && uid && sid == null){
+            let sensors = await Sensor.find({organization:oid, unit:uid})
+            if(sensors){
+                return res.status(200).json({ success: true, data: sensors })
+            }
+            else{
+                return res.status(404).json({error: 'Sensors not found'})
+            }
         }
-        else{
-            let sensors = await Sensor.find();
-            return res.status(200).json({ success: true, data: sensors })
-        }
+
+        // list sensor of organization by organization and machine
+            
+            else if(oid && mid && sid == null){
+                let sensors = await Sensor.find({organization:oid, machine:mid})
+                if(sensors){
+                    return res.status(200).json({ success: true, data: sensors })
+                }
+                else{
+                    return res.status(404).json({error: 'Sensors not found'})
+                }
+            }
+    
+            else if(sid){
+                let sensor = await Sensor.find({organization:oid, unit:uid, machine:mid, _id:sid})
+                if(sensor){
+                    return res.status(200).json({ success: true, data: sensor })
+                }
+                else{
+                    return res.status(404).json({error: 'Sensor not found'})
+                }
+            }
+            else{
+                return res.status(403).json({error: 'User is not part of any organization'})
+            }
 
     } catch (error) {
         console.log(error);
@@ -81,13 +146,28 @@ exports.getSensor = async (req, res) => {
 
 exports.getUnit = async (req, res) => {
     try {
-        if(req.query.id){
-            let unit = await Unit.findById(req.query.id);
-            return res.status(200).json({ success: true, data: unit });
+        let oid = req.userOrg
+        let uid = req.query.uid 
+        if(oid && uid == null){
+            let units = await Unit.find({organization:oid})
+            if(units){
+                return res.status(200).json({ success: true, data: units })
+            }
+            else{
+                return res.status(404).json({error: 'Units not found'})
+            }
+        }
+        else if (oid && uid){
+            let unit = await Unit.find({organization:oid, _id:uid})
+            if(unit){
+                return res.status(200).json({ success: true, data: unit })
+            }
+            else{
+                return res.status(404).json({error: 'Unit not found'})
+            }
         }
         else{
-            let units = await Unit.find();
-            return res.status(200).json({ success: true, data: units });
+            return res.status(403).json({error: 'User is not part of any organization'}) 
         }
 
     } catch (error) {

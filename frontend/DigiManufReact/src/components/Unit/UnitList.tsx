@@ -17,7 +17,7 @@ const UnitList: React.FC<{ organizationId: string }> = ({ organizationId }) => {
     const getData = async () => {
         try {
             // TODO: Change the URL to fetch data for the organization based on the organizationId, so take the organizationId as a parameter
-            const response = await fetch('http://localhost:3001/api/org/unit', {
+            const response = await fetch(`http://localhost:3001/api/org/unit`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
