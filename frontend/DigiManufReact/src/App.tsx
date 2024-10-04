@@ -7,10 +7,12 @@ import OrganizationPage from './pages/OrganizationPage';
 import UnitPage from './pages/UnitPage';
 import MachinePage from './pages/MachinePage';
 import SensorPage from './pages/SensorPage';
+import { useEffect } from 'react';
 
 // TODO: Reloading of the page or component when any of the new things is added to it.
 
 function App() {
+    
     return (
         <AuthProvider>
             <Router>

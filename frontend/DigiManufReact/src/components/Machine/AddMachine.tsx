@@ -20,7 +20,7 @@ const AddMachine: React.FC<AddMachineProps> = ({ unitId, organizationId }) => {
                     'Content-Type': 'application/json',
                 },
                 credentials: 'include',
-                body: JSON.stringify({ name: name, unit:unitId }),
+                body: JSON.stringify({ name: name, unit:unitId, organization:organizationId }),
             });
 
             const data = await response.json();

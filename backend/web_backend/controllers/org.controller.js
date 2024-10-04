@@ -2,22 +2,27 @@ var Org = require('../models/organization.js');
 var Sensor = require('../models/sensor.js');
 var Machine = require('../models/machine.js');
 var Unit = require('../models/unit.js');
+var User = require('../models/user.js');
 var dotenv = require('dotenv');
+const jwt = require("jsonwebtoken")
 dotenv.config();
 const SECRET_KEY = process.env.SECRET_KEY;
 
 
 exports.getOrg = async (req, res) => {
     try {
-        let token = req.cookies.token
-        const decoded = jwt.verify(token, SECRET_KEY);
-        const user = decoded.userId;
 
+        const user = req.user;
         let uid = user.organization;
-        console.log(uid)
+        console.log("org id", uid)
 
         if(uid){
-            let org = await Org.findById({_id: req.query.uid});
+            let org = await Org.findById({_id: uid});
+            // console.log("req.userOrg",req.userOrg)
+            // console.log("org._id.toString()",org._id.toString())
+            if (!org || org._id.toString() !== req.userOrg.toString()) {
+                return res.status(403).json({ error: 'Access Denied: You are not authorized to view this organization' });
+            }
             return res.status(200).json({ success: true, data: org });
         }
         else{
