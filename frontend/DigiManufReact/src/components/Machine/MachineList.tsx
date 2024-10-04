@@ -26,6 +26,7 @@ const MachineList: React.FC<MachineListProps> = ({ unitId, organizationId, unitN
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include'
             });
 
             const data = await response.json();

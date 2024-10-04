@@ -83,14 +83,11 @@ const MachinePage: React.FC = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include'
             });
 
             const data = await response.json();
-            // setName(data.data);
             setName(data.data[0].name);
-
-            // Move the console.log here to avoid infinite re-rendering
-            console.log(data.data);
         };
 
         getName();

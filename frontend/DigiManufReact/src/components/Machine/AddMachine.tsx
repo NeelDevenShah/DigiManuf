@@ -21,6 +21,7 @@ const AddMachine: React.FC<AddMachineProps> = ({ unitId, organizationId }) => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify({ name: name, unit:unitId }),
             });
 

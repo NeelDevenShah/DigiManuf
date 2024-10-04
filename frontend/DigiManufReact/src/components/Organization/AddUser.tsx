@@ -12,11 +12,12 @@ const AddUser: React.FC = () => {
     const handleSubmit = async(e: React.FormEvent) => {
         e.preventDefault();
         // Implement add user logic here
-        const response = await fetch('http://localhost:3001/api/auth/signup', {
+        const response = await fetch('http://localhost:3001/api/auth/add-user', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'include',
             body: JSON.stringify({ email, password, role }),
         });
 

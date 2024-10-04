@@ -2,12 +2,28 @@ var Org = require('../models/organization.js');
 var Sensor = require('../models/sensor.js');
 var Machine = require('../models/machine.js');
 var Unit = require('../models/unit.js');
+var dotenv = require('dotenv');
+dotenv.config();
+const SECRET_KEY = process.env.SECRET_KEY;
 
 
 exports.getOrg = async (req, res) => {
     try {
-        let org = await Org.find();
-        return res.status(200).json({ success: true, data: org });
+        let token = req.cookies.token
+        const decoded = jwt.verify(token, SECRET_KEY);
+        const user = decoded.userId;
+
+        let uid = user.organization;
+        console.log(uid)
+
+        if(uid){
+            let org = await Org.findById({_id: req.query.uid});
+            return res.status(200).json({ success: true, data: org });
+        }
+        else{
+            res.status(400).json({ error: 'Organizationnto found' });
+        }
+        
     } catch (error) {
         console.log(error);
         return res.status(500).json({ error: 'Internal server error' });

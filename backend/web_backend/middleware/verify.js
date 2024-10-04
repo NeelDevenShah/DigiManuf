@@ -1,11 +1,11 @@
 const jwt = require('jsonwebtoken')
 const JWT_SECRET = process.env.SECRET_KEY;
-const cookieParser = require('cookie-parser');
 
 
 const verifyuser = async(req, res, next) => {
-    // console.log(req.cookies)
+    console.log("cookie", req.cookies)
     const token = await req.cookies.token;
+    console.log(token)
     if (!token) {
         return res.sendStatus(401).json({ error: "Unauthorized" })
     }

@@ -23,6 +23,7 @@ const AddSensor: React.FC<AddSensorProps> = ({ machineId, unitId, organizationId
                 headers: {
                     'Content-Type': 'application/json',
                 },  
+                credentials: 'include',
                 body: JSON.stringify({ name: name, machine:machineId, type:type }),
             });
 

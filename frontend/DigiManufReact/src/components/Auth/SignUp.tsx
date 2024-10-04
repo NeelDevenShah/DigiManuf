@@ -6,6 +6,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 const SignUp: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [organization, setOrganization] = useState('');
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -16,7 +17,8 @@ const SignUp: React.FC = () => {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ email, password }),
+            credentials: 'include',
+            body: JSON.stringify({ email, password, organization }),
         });
 
         const data = await response.json();
@@ -49,6 +51,22 @@ const SignUp: React.FC = () => {
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             placeholder="Email"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <div className="mb-3">
+                                    {/* Enhanced: Input group with icon for better visual cues */}
+                                    <div className="input-group">
+                                        <span className="input-group-text">
+                                            <i className="bi bi-envelope"></i>
+                                        </span>
+                                        <input
+                                            type="organization"
+                                            className="form-control"
+                                            value={organization}
+                                            onChange={(e) => setOrganization(e.target.value)}
+                                            placeholder="Organization"
                                             required
                                         />
                                     </div>

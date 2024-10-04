@@ -5,16 +5,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { useState, useEffect } from 'react';
 
-const getData = async () => {
-    // Fetch data from the API
-    const [unit, setUnit] = useState([]);
-    const [machine, setMachine] = useState([]);
-    const [sensor, setSensor] = useState([]);
-    const response = await fetch('http://localhost:3001/api/organization');
-    const data = await response.json();
-    console.log('Organization data:', data);
-}
-
 const OrganizationDashboard: React.FC = () => {
 
     const [data, setData] = React.useState<any>({"unit":0, "machines":0, "sensors":0});
@@ -26,6 +16,7 @@ const OrganizationDashboard: React.FC = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include'
             });
 
             let machines = await fetch('http://localhost:3001/api/org/machine', {
@@ -33,6 +24,7 @@ const OrganizationDashboard: React.FC = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include'
             });
 
             let sensors = await fetch('http://localhost:3001/api/org/sensor', {
@@ -40,6 +32,7 @@ const OrganizationDashboard: React.FC = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include'
             });
 
             let unitData = await units.json();
