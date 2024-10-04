@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -7,7 +7,8 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 const Login: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const { login, isLoading, error } = useAuth(); // Added: isLoading and error from AuthContext
+    const [organizationId, setOrganizationId] = useState(''); // State to store organizationId
+    const { login, isLoading, error } = useAuth(); // isLoading and error from AuthContext
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -15,16 +16,41 @@ const Login: React.FC = () => {
         try {
             await login(email, password);
             if (!error) {
-                // TODO: Adding the organization ID to the path, retrieve it from the backend
-                var organizationId = 'org001'; // For temporary purpose making it static 
-                navigate(`/organization/${organizationId}`); // Only navigate if no error
+                const getData = async () => {
+                    try {
+                        const response = await fetch(`http://localhost:3001/api/org/organization`, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            credentials: 'include',
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            const id = data.data._id;
+                            console.log("Fetched Organization ID:", id);
+                            setOrganizationId(id); // Store the organizationId in state
+                        } else {
+                            console.error("Failed to fetch organization data");
+                        }
+                    } catch (error) {
+                        console.error("Error fetching organization data:", error);
+                    }
+                };
+                getData();
             }
         } catch (error) {
             console.error('Login failed:', error);
-            // Error is already handled in the context
         }
     };
-    
+
+    // useEffect to navigate once organizationId is updated
+    useEffect(() => {
+        if (organizationId) {
+            navigate(`/organization/${organizationId}`); // Navigate when organizationId is set
+        }
+    }, [organizationId, navigate]); // Dependency on organizationId
 
     return (
         <div className="container mt-5">
@@ -64,11 +90,9 @@ const Login: React.FC = () => {
                                         />
                                     </div>
                                 </div>
-                                
-                                {/* Added: Displaying error message if any */}
+
                                 {error && <div className="alert alert-danger">{error}</div>}
 
-                                {/* Enhanced: Disable button while loading */}
                                 <button type="submit" className="btn btn-primary w-100" disabled={isLoading}>
                                     {isLoading ? 'Logging in...' : 'Login'}
                                 </button>

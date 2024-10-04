@@ -3,15 +3,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { useState, useEffect } from 'react';
 
-const getData = async () => {
-    const [unit, setUnit] = useState([]);
-    const [machine, setMachine] = useState([]);
-    const [sensor, setSensor] = useState([]);
-    // TODO: Change the URL to fetch units for the data based on the organizationId, so take the organizationId as a parameter
-    const response = await fetch('http://localhost:3001/api/organization');
-    const data = await response.json();
-    console.log('Organization data:', data);
-}
 
 const OrganizationDashboard: React.FC<{ organizationId: string }> = ({ organizationId }) => {
 
@@ -25,6 +16,7 @@ const OrganizationDashboard: React.FC<{ organizationId: string }> = ({ organizat
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include'
             });
 
             // TODO: Change the URL to fetch units for the data based on the organizationId, so take the organizationId as a parameter
@@ -33,6 +25,7 @@ const OrganizationDashboard: React.FC<{ organizationId: string }> = ({ organizat
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include'
             });
 
             // TODO: Change the URL to fetch units for the data based on the organizationId, so take the organizationId as a parameter
@@ -41,6 +34,7 @@ const OrganizationDashboard: React.FC<{ organizationId: string }> = ({ organizat
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include'
             });
 
             let unitData = await units.json();

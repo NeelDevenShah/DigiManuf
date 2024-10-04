@@ -13,7 +13,8 @@ const AddUnit: React.FC<{ organizationId: string }> = ({ organizationId }) =>  {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ name: name }),
+            credentials: 'include',
+            body: JSON.stringify({ name: name, organization: organizationId }),
         });
 
         const data = await response.json();

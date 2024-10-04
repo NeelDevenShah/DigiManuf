@@ -79,20 +79,21 @@ const UnitPage: React.FC = () => {
         const getName = async () => {
             try {
                 // TODO: Change the URL to fetch data for the organization based on the organizationId, so take the organizationId as a parameter
-                const response = await fetch(`http://localhost:3001/api/org/unit/?id=${unitId}`, {
+                console.log("uid",unitId)
+                const response = await fetch(`http://localhost:3001/api/org/unit/?uid=${unitId}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
                     },
+                    credentials: 'include'
                 });
 
                 if (!response.ok) {
                     throw new Error('Failed to fetch unit name');
                 }
-
                 const data = await response.json();
-                console.log(data.data.name)
-                setName(data.data.name || 'Unknown Unit');
+                // console.log("data",data.data)
+                setName(data.data[0].name);
                 setLoading(false);
             } catch (err: any) {
                 setError(err.message || 'Something went wrong');
@@ -112,10 +113,10 @@ const UnitPage: React.FC = () => {
     if (error) {
         return <div>Error: {error}</div>;
     }
-
-    if (!unitId || !name) {
-        return <div>Unit not found</div>;
-    }
+    console.log("before if",unitId)
+    // if (!unitId || !name) {
+    //     return <div>Unit not found</div>;
+    // }
 
     return (
         <div style={styles.container}>
@@ -125,9 +126,9 @@ const UnitPage: React.FC = () => {
             {/* Machine List Section */}
             <div style={styles.card}>
                 <h2 style={styles.sectionTitle}>Machines</h2>
-                <MachineList unitId={unitId} organizationId={organizationId} unitName={name} />
+                <MachineList unitId={unitId!} organizationId={organizationId} unitName={name} />
                 <hr/>
-                <AddMachine unitId={unitId} organizationId={organizationId} />
+                <AddMachine unitId={unitId!} organizationId={organizationId} />
             </div>
 
             {/* Graph Section */}

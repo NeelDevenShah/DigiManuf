@@ -30,6 +30,7 @@ const SensorList: React.FC<SensorListProps> = ({ machineId, unitId, organization
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include'
             });
 
             const data = await response.json();

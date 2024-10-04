@@ -21,7 +21,8 @@ const AddSensor: React.FC<AddSensorProps> = ({ machineId, unitId, organizationId
                 headers: {
                     'Content-Type': 'application/json',
                 },  
-                body: JSON.stringify({ name: name, machine:machineId, type:type }),
+                credentials: 'include',
+                body: JSON.stringify({ name: name, machine:machineId, type:type, unit:unitId, organization:organizationId }),
             });
 
             const data = await response.json();

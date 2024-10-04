@@ -1,4 +1,6 @@
 var mongoose = require('mongoose');
+var Organization = require('./organization');
+
 const userSchema = new mongoose.Schema({
     email: {
         type: String,
@@ -17,6 +19,10 @@ const userSchema = new mongoose.Schema({
         enum: ["user", "admin"],
         default: "user",
         required: true
+    },
+    organization: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Organization'  
     },
 });
 

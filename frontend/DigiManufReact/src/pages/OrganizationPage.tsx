@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import OrganizationDashboard from '../components/Organization/OrganizationDashboard';
 import AddUser from '../components/Organization/AddUser';
@@ -71,10 +71,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
 };
 
+
 const OrganizationPage: React.FC = () => {
-    const {organizationId } = useParams<{organizationId: string }>();
+    
+    var {organizationId } = useParams<{organizationId: string }>();
+    console.log("inpage",organizationId);
     const effectiveOrganizationId = organizationId ?? 'org001';
 
+    
     return (
         <div style={styles.container}>
             <h1 style={styles.pageTitle}>Organization Dashboard</h1>

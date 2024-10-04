@@ -10,12 +10,13 @@ const AddUser: React.FC<{ organizationId: string }> = ({ organizationId }) => {
     const handleSubmit = async(e: React.FormEvent) => {
         e.preventDefault();
         // TODO: Change the URL to fetch units for the data based on the organizationId, so take the organizationId as a parameter
-        const response = await fetch('http://localhost:3001/api/auth/signup', {
+        const response = await fetch('http://localhost:3001/api/auth/add-user', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ email, password, role }),
+            credentials: 'include',
+            body: JSON.stringify({ email, password, role, organization: organizationId }),
         });
 
         const data = await response.json();
