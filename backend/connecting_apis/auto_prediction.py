@@ -175,8 +175,8 @@ async def schedule_api_calls(periods=24):
         await asyncio.sleep(7200)  # Sleep for 2 hours (7200 seconds)
 
 @app.post("/manual_trigger")
-async def manual_trigger(organization_id: str, unit_id:str, machine_id: str, sensor_id: str, periods: int, start_timestamp: str, background_tasks: BackgroundTasks):
-    data = await execute_api_call(organization_id, unit_id, machine_id, sensor_id, periods, start_timestamp)
+async def manual_trigger(organization_id: str, unit_id:str, machine_id: str, sensor_id: str, background_tasks: BackgroundTasks):
+    data = await execute_api_call(organization_id, unit_id, machine_id, sensor_id, periods=24)
     return data
 
 @app.on_event("startup")

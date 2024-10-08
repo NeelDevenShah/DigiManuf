@@ -132,7 +132,7 @@ def fetch_data_from_cosmos(organization_id: str, unit_id: str, machine_id: str, 
     
     items = list(container.query_items(query=query, enable_cross_partition_query=True))
     df = pd.DataFrame(items)
-    print(f"Fetched {len(df)} records from the last 10 minutes for {organization_id}, {machine_id}, {sensor_id}")
+    print(f"Fetched {len(df)} records from the last 10 minutes for {organization_id}, {unit_id}, {machine_id}, {sensor_id}")
     return df
 
 def call_anomaly_api(data):
@@ -179,11 +179,14 @@ def update_cosmos_with_anomaly_prediction(data, is_anomaly):
 
 def process_anomaly_detection(df):
     for _, row in df.iterrows():
-        
-        anomaly_response = call_anomaly_api(row)
-        is_anomaly = anomaly_response.get("is_anomaly", False)
+        try:
+            anomaly_response = call_anomaly_api(row)
+            # print(anomaly_response)
+            is_anomaly = anomaly_response.get("is_anomaly", False)
 
-        update_cosmos_with_anomaly_prediction(row.to_dict(), is_anomaly)
+            update_cosmos_with_anomaly_prediction(row.to_dict(), is_anomaly)
+        except:
+            print("Error: Anomaly API call failed")
 
 async def anomaly_detection_task():
     while True:
