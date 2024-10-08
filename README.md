@@ -18,8 +18,11 @@ The entire DigiManuf ecosystem is based on a robust architecture that integrates
 
 - Frontend: Built using React, the frontend allows for intuitive interaction with the digital twin, analytics dashboard, and real-time control systems.
 - Backends:
+
   - Node.js Backend: Handles real-time API calls, manages data pipelines, and processes user interactions.
   - Python FastAPI Backend: Powers the AI-based predictive and anomaly detection algorithms.
+  - Microservices Architecture: The backend follows a microservices architecture, with 8 different microservices responsible for specific functionalities.
+
 - Azure Services:
   - Digital Twin: Enables real-time virtual representation of manufacturing processes.
   - CosmosDB: Used for scalable data storage and real-time data ingestion from distributed units.

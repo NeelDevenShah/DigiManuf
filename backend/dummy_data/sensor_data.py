@@ -61,7 +61,7 @@ def upload_data_to_cosmos(df):
 
     print(f"Data uploaded to Azure Cosmos DB container '{CONTAINER_NAME}'.")
 
-dummy_data = generate_dummy_data_with_datetime(num_samples=100, organization_id="org001", unit_id="unt001", machine_id="mac001", sensor_id="sen001")
+dummy_data = generate_dummy_data_with_datetime(num_samples=100, organization_id="6704ef4787e2e83f2d915f04", unit_id="6704ef6987e2e83f2d915f1c", machine_id="6704efcb87e2e83f2d915f3f", sensor_id="6704f4e226b62d9e3fd2515f")
 
 dummy_data.to_csv('dummy_data.csv', index=False)
 dummy_data = pd.read_csv("dummy_data.csv")

@@ -1,3 +1,5 @@
+# Micro-service-3
+
 from azure.cosmos import CosmosClient
 import pandas as pd
 from datetime import datetime, timedelta
@@ -165,7 +167,7 @@ def fetch_anomaly_data_api(request: AnomalyDataRequest):
     
     return data
 
-# TODO: Testing, with the mongoDB
+# TESTED: OK
 async def fetch_sensor_categories(organization_id: str, unit_id: str = None, machine_id: str = None):
     try:
         query = {"organization": ObjectId(organization_id)}
@@ -175,7 +177,7 @@ async def fetch_sensor_categories(organization_id: str, unit_id: str = None, mac
         if machine_id:
             query["machine"] = ObjectId(machine_id)
 
-        sensors = db.sensors.find()
+        sensors = db.sensors.find(query)
         # print(all_sensors)
         for sensor in list(sensors):
             print(sensor)
@@ -269,7 +271,7 @@ def fetch_anomaly_data_for_sensors_by_all_category(organization_id: str, unit_id
 
 ################## For fetching anomaly data related to the particular sensor categories
 
-# TODO: Testing, with the mongoDB
+# TESTED: OK
 def fetch_sensor_ids_by_categories(organization_id: str, sensor_categories: list, unit_id: str = None, machine_id: str = None):
     try:
         # Step 1: Build the query with the organization ID and sensor categories
@@ -431,12 +433,16 @@ def fetch_anomaly_data_for_sensors_by_categories(organization_id: str, sensor_ca
     return output
 
 async def main():
-    result = await fetch_sensor_categories("66f4365ce3011e62e45547be")
-    # result = await fetch_sensor_categories("66f4365ce3011e62e45547be", "66f5535b6b7ab6e6046a016f")
+    # result = await fetch_sensor_categories("6704ef4787e2e83f2d915f04", "6704f1e426b62d9e3fd24ff6", "6704efcb87e2e83f2d915f3f")
+    # result = await fetch_sensor_categories("6704ef4787e2e83f2d915f04", "6704f1e426b62d9e3fd24ff6")
+    # result = await fetch_sensor_categories("6704ef4787e2e83f2d915f04")
+    
+    
+    result = fetch_sensor_ids_by_categories("6704ef4787e2e83f2d915f04", ["fire"])
     print(result)
 
-# if __name__ == "__main__":
-    # asyncio.run(main())
-
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8010)
+    asyncio.run(main())
+
+# if __name__ == "__main__":
+#     uvicorn.run(app, host="0.0.0.0", port=8010)
