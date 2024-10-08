@@ -91,7 +91,7 @@ exports.getSensor = async (req, res) => {
 
         // for all sensors in organization
 
-        if(oid && sid == null){
+        if(oid && sid == null && mid == null && uid == null){
             let sensors = await Sensor.find({organization:oid})
             if(sensors){
                 return res.status(200).json({ success: true, data: sensors })
@@ -103,7 +103,7 @@ exports.getSensor = async (req, res) => {
 
         // list sensor of organization by organization and unit
 
-        else if(oid && uid && sid == null){
+        else if(oid && uid && sid == null && mid == null){
             let sensors = await Sensor.find({organization:oid, unit:uid})
             if(sensors){
                 return res.status(200).json({ success: true, data: sensors })
