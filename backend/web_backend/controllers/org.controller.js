@@ -41,7 +41,7 @@ exports.getMachine = async (req, res) => {
         let uid = req.query.uid
 
         // for all machines in organization
-        if(oid && mid == null){
+        if(oid && mid == null && uid == null){
             let machines = await Machine.find({organization: oid});
             if(machines){
                 return res.status(200).json({ success: true, data: machines });
