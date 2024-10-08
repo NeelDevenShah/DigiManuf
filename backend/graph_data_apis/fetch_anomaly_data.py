@@ -14,9 +14,6 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 import asyncio
 
-# TODO: File under Process
-# TODO: Testing and Development
-
 app = FastAPI()
 
 # CosmosDB config
@@ -178,11 +175,6 @@ async def fetch_sensor_categories(organization_id: str, unit_id: str = None, mac
             query["machine"] = ObjectId(machine_id)
 
         sensors = db.sensors.find(query)
-        # print(all_sensors)
-        for sensor in list(sensors):
-            print(sensor)
-            print("**")
-        print("-----------")
         categories = {str(sensor["_id"]): sensor["type"] for sensor in sensors}
         return categories
 
@@ -286,9 +278,6 @@ def fetch_sensor_ids_by_categories(organization_id: str, sensor_categories: list
             query["machine"] = ObjectId(machine_id)
 
         sensors = db.sensors.find()
-        for sensor in sensors:
-            print(sensor)
-        print("-----------")
         categories = {str(sensor["_id"]): sensor["type"] for sensor in sensors}
         return categories
 
@@ -432,6 +421,7 @@ def fetch_anomaly_data_for_sensors_by_categories(organization_id: str, sensor_ca
     # Return the JSON representation of the output
     return output
 
+# For testing purpose only
 async def main():
     # result = await fetch_sensor_categories("6704ef4787e2e83f2d915f04", "6704f1e426b62d9e3fd24ff6", "6704efcb87e2e83f2d915f3f")
     # result = await fetch_sensor_categories("6704ef4787e2e83f2d915f04", "6704f1e426b62d9e3fd24ff6")
@@ -441,8 +431,10 @@ async def main():
     result = fetch_sensor_ids_by_categories("6704ef4787e2e83f2d915f04", ["fire"])
     print(result)
 
-if __name__ == "__main__":
-    asyncio.run(main())
-
+# For testing purpose only
 # if __name__ == "__main__":
-#     uvicorn.run(app, host="0.0.0.0", port=8010)
+#     asyncio.run(main())
+
+# Bydeault, use this one
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8010)

@@ -5,9 +5,9 @@ from datetime import datetime, timedelta
 import requests
 import pandas as pd
 from azure.cosmos import CosmosClient
+from pymongo import MongoClient
+from bson import ObjectId
 from fastapi import BackgroundTasks, FastAPI, HTTPException
-
-# TODO: Make dynamic as per the data from MongoDB
 
 # FastAPI app
 app = FastAPI()
@@ -24,11 +24,30 @@ LOG_CONTAINER_NAME = "log-container"
 ANOMALY_URL = "http://0.0.0.0:8000/predict_anomaly"
 TRAINING_URL = "http://0.0.0.0:8000/train_anomaly_model"
 
-# TODO: Make dynamic as per the data from MongoDB
-organizations = ["org001", "org002"]
-units = ["unt001", "unt002"]
-machines = ["mac001", "mac002"]
-sensors = ["sen001", "sen002"]
+# Mongo Configuations
+client = MongoClient("")
+db = client['digimanuf']
+
+async def get_sensor_data():
+    try:
+        sensors = db.sensors.find()
+        unique_data = set()
+
+        for sensor in list(sensors):
+            sensor_tuple = (str(sensor.get('organization')), 
+                            str(sensor.get('unit')), 
+                            str(sensor.get('machine')), 
+                            str(sensor.get('_id')))
+
+            unique_data.add(sensor_tuple)
+
+        unique_data_list = list(unique_data)
+        
+        return unique_data_list
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return
 
 def log_training_to_cosmos(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
@@ -83,11 +102,9 @@ def call_training_api(organization_id: str, unit_id: str, machine_id: str, senso
 
 async def training_task():
     while True:
-        for organization_id in organizations:
-            for unit_id in units:
-                for machine_id in machines:
-                    for sensor_id in sensors:
-                        call_training_api(organization_id, unit_id, machine_id, sensor_id)
+        sensor_data = await get_sensor_data()
+        for organization_id, unit_id, machine_id, sensor_id in sensor_data:
+            call_training_api(organization_id, unit_id, machine_id, sensor_id)
         
         await asyncio.sleep(86400)  # Sleep for 24 hours
 
@@ -170,13 +187,12 @@ def process_anomaly_detection(df):
 
 async def anomaly_detection_task():
     while True:
-        for organization_id in organizations:
-            for unit_id in units:
-                for machine_id in machines:
-                    for sensor_id in sensors:
-                        df = fetch_data_from_cosmos(organization_id, unit_id, machine_id, sensor_id)
-                        if not df.empty:
-                            process_anomaly_detection(df)
+        sensor_data = await get_sensor_data()
+        for organization_id, unit_id, machine_id, sensor_id in sensor_data:
+            df = fetch_data_from_cosmos(organization_id, unit_id, machine_id, sensor_id)
+            if not df.empty:
+                process_anomaly_detection(df)
+                        
         await asyncio.sleep(300)  # Run every 5 minutes
 
 @app.post("/manual_trigger_anomaly")
