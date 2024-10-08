@@ -90,12 +90,12 @@ const OrganizationPage: React.FC = () => {
                 <OrganizationDashboard organizationId={effectiveOrganizationId}/>
             </div>
 
-            {/* Users Section */}
+            {/* Users Section
             <div style={styles.card}>
                 <h2 style={styles.sectionTitle}></h2>
                 <AddUser organizationId= {effectiveOrganizationId}/>
                 <h2 style={styles.sectionTitle}></h2>
-            </div>
+            </div> */}
 
             {/* Manufacturing Units Section */}
             <div style={styles.card}>

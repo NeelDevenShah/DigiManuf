@@ -31,6 +31,7 @@ const Login: React.FC = () => {
                             const id = data.data._id;
                             console.log("Fetched Organization ID:", id);
                             setOrganizationId(id); // Store the organizationId in state
+                            navigate(`/organization/${id}`); // Navigate when organizationId is set
                         } else {
                             console.error("Failed to fetch organization data");
                         }
