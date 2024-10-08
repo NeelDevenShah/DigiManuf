@@ -1,3 +1,5 @@
+# Micro-service-4
+
 from azure.cosmos import CosmosClient
 import pandas as pd
 from datetime import datetime, timedelta
@@ -38,6 +40,7 @@ class DataResponse(BaseModel):
     sensor_id: str
     data: List[TimeSeriesData]
 
+# TODO: Not working properly the second part of items
 def fetch_data_from_cosmos(organization_id: str, unit_id: str, machine_id: str, sensor_id: str, start_time: datetime, end_time: datetime):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
     database = client.get_database_client(DATABASE_NAME)

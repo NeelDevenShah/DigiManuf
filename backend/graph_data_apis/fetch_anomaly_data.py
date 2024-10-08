@@ -1,3 +1,5 @@
+# Micro-service-3
+
 from azure.cosmos import CosmosClient
 import pandas as pd
 from datetime import datetime, timedelta
@@ -11,9 +13,6 @@ from azure.cosmos import CosmosClient
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import asyncio
-
-# TODO: File under Process
-# TODO: Testing and Development
 
 app = FastAPI()
 
@@ -165,7 +164,7 @@ def fetch_anomaly_data_api(request: AnomalyDataRequest):
     
     return data
 
-# TODO: Testing, with the mongoDB
+# TESTED: OK
 async def fetch_sensor_categories(organization_id: str, unit_id: str = None, machine_id: str = None):
     try:
         query = {"organization": ObjectId(organization_id)}
@@ -175,12 +174,7 @@ async def fetch_sensor_categories(organization_id: str, unit_id: str = None, mac
         if machine_id:
             query["machine"] = ObjectId(machine_id)
 
-        sensors = db.sensors.find()
-        # print(all_sensors)
-        for sensor in list(sensors):
-            print(sensor)
-            print("**")
-        print("-----------")
+        sensors = db.sensors.find(query)
         categories = {str(sensor["_id"]): sensor["type"] for sensor in sensors}
         return categories
 
@@ -269,7 +263,7 @@ def fetch_anomaly_data_for_sensors_by_all_category(organization_id: str, unit_id
 
 ################## For fetching anomaly data related to the particular sensor categories
 
-# TODO: Testing, with the mongoDB
+# TESTED: OK
 def fetch_sensor_ids_by_categories(organization_id: str, sensor_categories: list, unit_id: str = None, machine_id: str = None):
     try:
         # Step 1: Build the query with the organization ID and sensor categories
@@ -284,9 +278,6 @@ def fetch_sensor_ids_by_categories(organization_id: str, sensor_categories: list
             query["machine"] = ObjectId(machine_id)
 
         sensors = db.sensors.find()
-        for sensor in sensors:
-            print(sensor)
-        print("-----------")
         categories = {str(sensor["_id"]): sensor["type"] for sensor in sensors}
         return categories
 
@@ -430,13 +421,20 @@ def fetch_anomaly_data_for_sensors_by_categories(organization_id: str, sensor_ca
     # Return the JSON representation of the output
     return output
 
+# For testing purpose only
 async def main():
-    result = await fetch_sensor_categories("66f4365ce3011e62e45547be")
-    # result = await fetch_sensor_categories("66f4365ce3011e62e45547be", "66f5535b6b7ab6e6046a016f")
+    # result = await fetch_sensor_categories("6704ef4787e2e83f2d915f04", "6704f1e426b62d9e3fd24ff6", "6704efcb87e2e83f2d915f3f")
+    # result = await fetch_sensor_categories("6704ef4787e2e83f2d915f04", "6704f1e426b62d9e3fd24ff6")
+    # result = await fetch_sensor_categories("6704ef4787e2e83f2d915f04")
+    
+    
+    result = fetch_sensor_ids_by_categories("6704ef4787e2e83f2d915f04", ["fire"])
     print(result)
 
+# For testing purpose only
 # if __name__ == "__main__":
-    # asyncio.run(main())
+#     asyncio.run(main())
 
+# Bydeault, use this one
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8010)

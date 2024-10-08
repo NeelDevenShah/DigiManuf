@@ -1,13 +1,15 @@
+# Micro-service-2
+
 import time
 import asyncio
 from datetime import datetime, timedelta
 import requests
 from azure.cosmos import CosmosClient
+from pymongo import MongoClient
+from bson import ObjectId
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 
 app = FastAPI()
-
-# TODO: Make dynamic as per the data from MongoDB
 
 # CosmosDB config
 COSMOS_DB_ENDPOINT = ""
@@ -20,11 +22,30 @@ SENSOR_PRED_CONTAINER_NAME = "sensor-predictions"
 PREDICTION_URL = "http://localhost:8001/predict_values"
 TRAINING_URL = "http://0.0.0.0:8001/train_prediction_model"
 
-# TODO: Make dynamic as per the data from MongoDB
-organizations = ["org001", "org002"]
-units = ["unt001", "unt002"]
-machines = ["mac001", "mac002"]
-sensors = ["sen001", "sen002"]
+# Mongo Configuations
+client = MongoClient("")
+db = client['digimanuf']
+
+async def get_sensor_data():
+    try:
+        sensors = db.sensors.find()
+        unique_data = set()
+
+        for sensor in list(sensors):
+            sensor_tuple = (str(sensor.get('organization')), 
+                            str(sensor.get('unit')), 
+                            str(sensor.get('machine')), 
+                            str(sensor.get('_id')))
+
+            unique_data.add(sensor_tuple)
+
+        unique_data_list = list(unique_data)
+        
+        return unique_data_list
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return
 
 def log_training_to_cosmos(organization_id, unit_id, machine_id, sensor_id, start_time, end_time, status, message, model_type):
     client = CosmosClient(COSMOS_DB_ENDPOINT, COSMOS_DB_KEY)
@@ -79,11 +100,9 @@ def call_training_api(organization_id: str, unit_id:str, machine_id: str, sensor
 
 async def training_task():
     while True:
-        for organization_id in organizations:
-            for unit_id in units:
-                for machine_id in machines:
-                    for sensor_id in sensors:
-                        call_training_api(organization_id, unit_id, machine_id, sensor_id)
+        sensor_data = await get_sensor_data()
+        for organization_id, unit_id, machine_id, sensor_id in sensor_data:
+            call_training_api(organization_id, unit_id, machine_id, sensor_id)
         
         await asyncio.sleep(86400)  # Sleep for 24 hours
 
@@ -149,16 +168,15 @@ def store_prediction_in_cosmos(data, periods):
 
 async def schedule_api_calls(periods=24):
     while True:
-        for organization_id in organizations:
-            for unit_id in units:
-                for machine_id in machines:
-                    for sensor_id in sensors:
-                        await execute_api_call(organization_id, unit_id, machine_id, sensor_id, periods)
+        sensor_data = await get_sensor_data()
+        
+        for organization_id, unit_id, machine_id, sensor_id in sensor_data:
+            await execute_api_call(organization_id, unit_id, machine_id, sensor_id, periods)
         await asyncio.sleep(7200)  # Sleep for 2 hours (7200 seconds)
 
 @app.post("/manual_trigger")
-async def manual_trigger(organization_id: str, unit_id:str, machine_id: str, sensor_id: str, periods: int, start_timestamp: str, background_tasks: BackgroundTasks):
-    data = await execute_api_call(organization_id, unit_id, machine_id, sensor_id, periods, start_timestamp)
+async def manual_trigger(organization_id: str, unit_id:str, machine_id: str, sensor_id: str, background_tasks: BackgroundTasks):
+    data = await execute_api_call(organization_id, unit_id, machine_id, sensor_id, periods=24)
     return data
 
 @app.on_event("startup")
