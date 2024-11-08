@@ -1,0 +1,37 @@
+# Micro-service-4
+
+# Use a lightweight Python base image
+FROM python:3.9-slim-buster
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the requirements file
+COPY requirements.txt requirements.txt
+
+# Install dependencies
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the application code
+COPY . .
+
+# Expose the port your microservice listens on
+EXPOSE 8011
+
+# Define the command to run your microservice
+CMD ["python", "fetch_prediction_data.py"]
+
+
+# Commands to solve connection failure connection while building the image
+# sudo systemctl restart NetworkManager
+# sudo service docker restart
+
+# Build the Docker image
+# docker build -f Dockerfile.fetch_prediction -t neeldevenshah/digi-manuf-fetch-prediction-ms-4:0.0.1 .
+
+# Run Docker container
+# docker run -p 8011:8011 neeldevenshah/digi-manuf-fetch-prediction-ms-4:0.0.1
+
+# Push the Docker image to Docker Hub
+# docker push neeldevenshah/digi-manuf-fetch-prediction-ms-4:0.0.1

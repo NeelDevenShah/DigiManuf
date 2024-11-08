@@ -61,7 +61,21 @@ def upload_data_to_cosmos(df):
 
     print(f"Data uploaded to Azure Cosmos DB container '{CONTAINER_NAME}'.")
 
-dummy_data = generate_dummy_data_with_datetime(num_samples=100, organization_id="6704ef4787e2e83f2d915f04", unit_id="6704ef6987e2e83f2d915f1c", machine_id="6704efcb87e2e83f2d915f3f", sensor_id="6704f4e226b62d9e3fd2515f")
+dummy_data = generate_dummy_data_with_datetime(num_samples=100, organization_id="6704ef4787e2e83f2d915f04", unit_id="6704f1e426b62d9e3fd24ff6", machine_id="6704efcb87e2e83f2d915f3f", sensor_id="6704f4e226b62d9e3fd2515f")
+
+dummy_data.to_csv('dummy_data.csv', index=False)
+dummy_data = pd.read_csv("dummy_data.csv")
+upload_data_to_cosmos(dummy_data)
+os.remove('dummy_data.csv')
+
+dummy_data = generate_dummy_data_with_datetime(num_samples=100, organization_id="6704ef6987e2e83f2d915f1c", unit_id="6704f1e426b62d9e3fd24ff6", machine_id="6704efcb87e2e83f2d915f3f", sensor_id="6704efea87e2e83f2d915f52")
+
+dummy_data.to_csv('dummy_data.csv', index=False)
+dummy_data = pd.read_csv("dummy_data.csv")
+upload_data_to_cosmos(dummy_data)
+os.remove('dummy_data.csv')
+
+dummy_data = generate_dummy_data_with_datetime(num_samples=100, organization_id="6704f8e50cd3fcfc5ccda32b", unit_id="6704f9300cd3fcfc5ccda343", machine_id="6704f9f80cd3fcfc5ccda369", sensor_id="6704fa120cd3fcfc5ccda37d")
 
 dummy_data.to_csv('dummy_data.csv', index=False)
 dummy_data = pd.read_csv("dummy_data.csv")

@@ -1,0 +1,41 @@
+# Micro-service-8
+
+# Use Node.js image as the base
+FROM node:18
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy package.json and package-lock.json to install dependencies
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the application code to the container
+COPY . .
+
+# Build the React app
+RUN npm run build
+
+# Install a simple HTTP server to serve the build files
+RUN npm install -g serve
+
+# Expose port 3000 (or adjust if needed)
+EXPOSE 3000
+
+# Command to serve the app with Serve
+CMD ["serve", "-s", "build"]
+
+# Commands to solve connection failure connection while building the image
+# sudo systemctl restart NetworkManager
+# sudo service docker restart
+
+# Build the Docker image
+# docker build -f Dockerfile.frontend -t neeldevenshah/digi-manuf-web-frontend-ms-8:0.0.1 .
+
+# Run Docker container
+# docker run -p 3000:3000 neeldevenshah/digi-manuf-web-frontend-ms-8:0.0.1
+
+# Push the Docker image to Docker Hub
+# docker push neeldevenshah/digi-manuf-web-frontend-ms-8:0.0.1
