@@ -27,10 +27,10 @@ CMD ["python", "auto_detection.py"]
 # sudo service docker restart
 
 # Build the Docker image
-# docker build -f Dockerfile.auto_detection -t neeldevenshah/digi-manuf/auto-detection-ms-1:0.0.1 .
+# docker build -f Dockerfile.auto_detection -t neeldevenshah/digi-manuf-auto-detection-ms-1:0.0.1 .
 
 # Run Docker container
-# docker run -p 8002:8002 neeldevenshah/digi-manuf/auto-detection-ms-1:0.0.1
+# docker run -p 8002:8002 neeldevenshah/digi-manuf-auto-detection-ms-1:0.0.1
 
 # Push the Docker image to Docker Hub
-# docker push neeldevenshah/digi-manuf/auto-detection-ms-1:0.0.1
+# docker push neeldevenshah/digi-manuf-auto-detection-ms-1:0.0.1

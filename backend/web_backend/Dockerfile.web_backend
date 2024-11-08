@@ -27,10 +27,10 @@ CMD ["npm", "start"]
 # sudo service docker restart
 
 # Build the Docker image
-# docker build -f Dockerfile.web_backend -t neeldevenshah/digi-manuf/web-backend-ms-7:0.0.1 .
+# docker build -f Dockerfile.web_backend -t neeldevenshah/digi-manuf-web-backend-ms-7:0.0.1 .
 
 # Run Docker container
-# docker run -p 3001:3001 neeldevenshah/digi-manuf/web-backend-ms-7:0.0.1
+# docker run -p 3001:3001 neeldevenshah/digi-manuf-web-backend-ms-7:0.0.1
 
 # Push the Docker image to Docker Hub
-# docker push neeldevenshah/digi-manuf/web-backend-ms-7:0.0.1
+# docker push neeldevenshah/digi-manuf-web-backend-ms-7:0.0.1

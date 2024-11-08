@@ -28,10 +28,10 @@ CMD ["python", "prediction_api.py"]
 # sudo service docker restart
 
 # Build the Docker image
-# docker build -f Dockerfile.prediction_api -t neeldevenshah/digi-manuf/main-prediction-ms-6:0.0.1 .
+# docker build -f Dockerfile.prediction_api -t neeldevenshah/digi-manuf-main-prediction-ms-6:0.0.1 .
 
 # Run Docker container
-# docker run -p 8001:8001 neeldevenshah/digi-manuf/main-prediction-ms-6:0.0.1 
+# docker run -p 8001:8001 neeldevenshah/digi-manuf-main-prediction-ms-6:0.0.1 
 
 # Push the Docker image to Docker Hub
-# docker push neeldevenshah/digi-manuf/main-prediction-ms-6:0.0.1 
+# docker push neeldevenshah/digi-manuf-main-prediction-ms-6:0.0.1 

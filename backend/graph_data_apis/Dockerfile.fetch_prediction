@@ -28,10 +28,10 @@ CMD ["python", "fetch_prediction_data.py"]
 # sudo service docker restart
 
 # Build the Docker image
-# docker build -f Dockerfile.fetch_prediction -t neeldevenshah/digi-manuf/fetch-prediction-ms-4:0.0.1 .
+# docker build -f Dockerfile.fetch_prediction -t neeldevenshah/digi-manuf-fetch-prediction-ms-4:0.0.1 .
 
 # Run Docker container
-# docker run -p 8011:8011 neeldevenshah/digi-manuf/fetch-prediction-ms-4:0.0.1
+# docker run -p 8011:8011 neeldevenshah/digi-manuf-fetch-prediction-ms-4:0.0.1
 
 # Push the Docker image to Docker Hub
-# docker push neeldevenshah/digi-manuf/fetch-prediction-ms-4:0.0.1
+# docker push neeldevenshah/digi-manuf-fetch-prediction-ms-4:0.0.1
