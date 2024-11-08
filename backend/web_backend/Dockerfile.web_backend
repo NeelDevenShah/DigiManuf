@@ -1,0 +1,36 @@
+# Micro-service-7
+
+# Use an official Node.js runtime as the base image
+FROM node:18
+
+# Set the working directory in the container
+WORKDIR /usr/src/app
+
+# Copy the package.json and package-lock.json (if present)
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of your application's code to the container
+COPY . .
+
+# Expose the port your app runs on (adjust if different)
+EXPOSE 3001
+
+# Command to run the application
+CMD ["npm", "start"]
+
+
+# Commands to solve connection failure connection while building the image
+# sudo systemctl restart NetworkManager
+# sudo service docker restart
+
+# Build the Docker image
+# docker build -f Dockerfile.web_backend -t neeldevenshah/digi-manuf/web-backend-ms-7:0.0.1 .
+
+# Run Docker container
+# docker run -p 3001:3001 neeldevenshah/digi-manuf/web-backend-ms-7:0.0.1
+
+# Push the Docker image to Docker Hub
+# docker push neeldevenshah/digi-manuf/web-backend-ms-7:0.0.1

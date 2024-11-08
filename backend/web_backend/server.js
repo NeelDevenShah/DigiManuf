@@ -27,6 +27,7 @@ app.get("/", (req, res) => {
 });
 
 app.listen(3001, () => {
-  console.log("Server is running on http://localhost:3001");
+  // console.log("Server is running on http://localhost:3001");
+  console.log("Server is running on the port 3001");
   connectDB();
 });
