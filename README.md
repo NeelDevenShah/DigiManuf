@@ -31,17 +31,16 @@ The entire DigiManuf ecosystem is based on a robust architecture that integrates
 
 ## Docker Images and Run Commands
 
-| Service                        | Docker Image                                         | Run Command                                                   |
-|--------------------------------|------------------------------------------------------|----------------------------------------------------------------|
-| Auto Detection Service         | `neeldevenshah/digi-manuf-auto-detection-ms-1:0.0.1` | `docker run -p 8002:8002 neeldevenshah/digi-manuf-auto-detection-ms-1:0.0.1` |
-| Auto Prediction Service        | `neeldevenshah/digi-manuf-auto-prediction-ms-2:0.0.1`| `docker run -p 8003:8003 neeldevenshah/digi-manuf-auto-prediction-ms-2:0.0.1` |
-| Fetch Anomaly Service          | `neeldevenshah/digi-manuf-fetch-anomaly-ms-3:0.0.1`  | `docker run -p 8010:8010 neeldevenshah/digi-manuf-fetch-anomaly-ms-3:0.0.1`  |
-| Fetch Prediction Service       | `neeldevenshah/digi-manuf-fetch-prediction-ms-4:0.0.1` | `docker run -p 8011:8011 neeldevenshah/digi-manuf-fetch-prediction-ms-4:0.0.1` |
-| Main Anomaly Service           | `neeldevenshah/digi-manuf-main-anomaly-ms-5:0.0.1`   | `docker run -p 8000:8000 neeldevenshah/digi-manuf-main-anomaly-ms-5:0.0.1`   |
-| Main Prediction Service        | `neeldevenshah/digi-manuf-main-prediction-ms-6:0.0.1` | `docker run -p 8001:8001 neeldevenshah/digi-manuf-main-prediction-ms-6:0.0.1` |
-| Web Backend Service            | `neeldevenshah/digi-manuf-web-backend-ms-7:0.0.1`    | `docker run -p 3001:3001 neeldevenshah/digi-manuf-web-backend-ms-7:0.0.1`    |
-| Web Frontend Service           | `neeldevenshah/digi-manuf-web-frontend-ms-8:0.0.1`   | `docker run -p 3000:3000 neeldevenshah/digi-manuf-web-frontend-ms-8:0.0.1`   |
-
+| Service                  | Docker Image                                           | Run Command                                                                    |
+| ------------------------ | ------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Auto Detection Service   | `neeldevenshah/digi-manuf-auto-detection-ms-1:0.0.1`   | `docker run -p 8002:8002 neeldevenshah/digi-manuf-auto-detection-ms-1:0.0.1`   |
+| Auto Prediction Service  | `neeldevenshah/digi-manuf-auto-prediction-ms-2:0.0.1`  | `docker run -p 8003:8003 neeldevenshah/digi-manuf-auto-prediction-ms-2:0.0.1`  |
+| Fetch Anomaly Service    | `neeldevenshah/digi-manuf-fetch-anomaly-ms-3:0.0.1`    | `docker run -p 8010:8010 neeldevenshah/digi-manuf-fetch-anomaly-ms-3:0.0.1`    |
+| Fetch Prediction Service | `neeldevenshah/digi-manuf-fetch-prediction-ms-4:0.0.1` | `docker run -p 8011:8011 neeldevenshah/digi-manuf-fetch-prediction-ms-4:0.0.1` |
+| Main Anomaly Service     | `neeldevenshah/digi-manuf-main-anomaly-ms-5:0.0.1`     | `docker run -p 8000:8000 neeldevenshah/digi-manuf-main-anomaly-ms-5:0.0.1`     |
+| Main Prediction Service  | `neeldevenshah/digi-manuf-main-prediction-ms-6:0.0.1`  | `docker run -p 8001:8001 neeldevenshah/digi-manuf-main-prediction-ms-6:0.0.1`  |
+| Web Backend Service      | `neeldevenshah/digi-manuf-web-backend-ms-7:0.0.1`      | `docker run -p 3001:3001 neeldevenshah/digi-manuf-web-backend-ms-7:0.0.1`      |
+| Web Frontend Service     | `neeldevenshah/digi-manuf-web-frontend-ms-8:0.0.1`     | `docker run -p 3000:3000 neeldevenshah/digi-manuf-web-frontend-ms-8:0.0.1`     |
 
 ## AI Algorithms
 
@@ -136,6 +135,13 @@ DigiManuf incorporates advanced machine learning models for:
 
 - Neel Shah: neeldevenshah@gmail.com
 - Niral Schekhat: 22aiml051@charusat.edu.in
+
+## Some Screen Shots from Application
+
+![System Architecture Diagram](assets/app/organization_dashboard.png)
+![System Architecture Diagram](assets/app/login.png)
+![System Architecture Diagram](assets/app/sensor_dashboard.png)
+![System Architecture Diagram](assets/app/sensor_page.png)
 
 ## License
 
